@@ -2,7 +2,7 @@
 
 ![Maribeda Logo](public/logo.jpg)
 
-**Don't forget a thing.**
+**A local-first, lightning-fast diary running entirely in your browser. Powered by SQLite WASM and FTS5.**
 
 ## ✨ Features
 
@@ -13,7 +13,7 @@
 
 ## 🛠 The Stack
 
-We are pushing the boundaries of what a web app can do by running a full SQL engine in the browser.
+Pushing the boundaries of what a web app can do by running a full SQL engine in the browser.
 
 | Layer | Technology | Why? |
 | :--- | :--- | :--- |
