@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { useNotes } from './hooks/useNotes'
 import { useSearch } from './hooks/useSearch'
 import { NoteInputComponent } from './components/NoteInputComponent'
@@ -113,6 +114,7 @@ function App() {
       <footer className="app-footer">
         <p>All data stored locally on your device • No cloud • No accounts</p>
       </footer>
+      <Analytics />
     </div>
   )
 }
