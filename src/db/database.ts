@@ -24,8 +24,10 @@ export async function initDatabase(): Promise<Database> {
         db = new SQL.Database(savedData);
     } else {
         db = new SQL.Database();
-        createSchema(db);
     }
+
+    // Ensure schema and FTS tables exist (idempotent)
+    createSchema(db);
 
     return db;
 }
@@ -45,10 +47,51 @@ function createSchema(database: Database): void {
     )
   `);
 
-    // Create indexes for faster search
-    database.run(`CREATE INDEX IF NOT EXISTS idx_notes_content ON notes(content)`);
-    database.run(`CREATE INDEX IF NOT EXISTS idx_notes_title ON notes(title)`);
+    // Create indexes for faster standard access
     database.run(`CREATE INDEX IF NOT EXISTS idx_notes_createdAt ON notes(createdAt DESC)`);
+
+    // FTS5 Virtual Table (External Content)
+    // We use external content to save space, referencing the 'notes' table
+    try {
+        database.run(`
+            CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
+                title, 
+                content, 
+                content='notes', 
+                content_rowid='id'
+            )
+        `);
+
+        // Triggers to keep FTS index in sync with the main table
+        database.run(`
+            CREATE TRIGGER IF NOT EXISTS notes_ai AFTER INSERT ON notes BEGIN
+                INSERT INTO notes_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
+            END;
+        `);
+
+        database.run(`
+            CREATE TRIGGER IF NOT EXISTS notes_ad AFTER DELETE ON notes BEGIN
+                INSERT INTO notes_fts(notes_fts, rowid, title, content) VALUES('delete', old.id, old.title, old.content);
+            END;
+        `);
+
+        database.run(`
+            CREATE TRIGGER IF NOT EXISTS notes_au AFTER UPDATE ON notes BEGIN
+                INSERT INTO notes_fts(notes_fts, rowid, title, content) VALUES('delete', old.id, old.title, old.content);
+                INSERT INTO notes_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
+            END;
+        `);
+
+        // Attempt to populate FTS if it's empty but notes exist (migration)
+        // A full rebuild ensures consistency
+        database.run("INSERT INTO notes_fts(notes_fts) VALUES('rebuild')");
+
+    } catch (e) {
+        console.warn("FTS5 init failed (browser might not support it):", e);
+        // Fallback to standard indexes if FTS5 fails
+        database.run(`CREATE INDEX IF NOT EXISTS idx_notes_content ON notes(content)`);
+        database.run(`CREATE INDEX IF NOT EXISTS idx_notes_title ON notes(title)`);
+    }
 }
 
 /**
@@ -146,8 +189,7 @@ export function getAllNotes(): Note[] {
 }
 
 /**
- * Search notes using LIKE (case-insensitive)
- * Searches both title and content
+ * Search notes using FTS5 (Full-Text Search)
  */
 export function searchNotes(query: string): Note[] {
     const database = getDatabase();
@@ -156,23 +198,53 @@ export function searchNotes(query: string): Note[] {
         return getAllNotes();
     }
 
-    const likeQuery = `%${query.toLowerCase()}%`;
+    try {
+        // Prepare FTS query: split terms and append * for prefix matching
+        // e.g. "hello wor" -> "hello* wor*"
+        const ftsQuery = query
+            .trim()
+            .replace(/"/g, '') // Remove quotes to prevent syntax errors
+            .split(/\s+/)
+            .map(term => `"${term}"*`) // Quote terms and add wildcard
+            .join(' AND '); // Explicit AND
 
-    const result = database.exec(`
-    SELECT * FROM notes 
-    WHERE LOWER(title) LIKE ? OR LOWER(content) LIKE ?
-    ORDER BY createdAt DESC
-  `, [likeQuery, likeQuery]);
+        const result = database.exec(`
+            SELECT notes.* 
+            FROM notes 
+            JOIN notes_fts ON notes.id = notes_fts.rowid 
+            WHERE notes_fts MATCH ? 
+            ORDER BY notes_fts.rank
+        `, [ftsQuery]);
 
-    if (result.length === 0) return [];
+        if (result.length === 0) return [];
 
-    return result[0].values.map((row) => ({
-        id: row[0] as number,
-        title: row[1] as string | null,
-        content: row[2] as string,
-        createdAt: row[3] as string,
-        updatedAt: row[4] as string,
-    }));
+        return result[0].values.map((row) => ({
+            id: row[0] as number,
+            title: row[1] as string | null,
+            content: row[2] as string,
+            createdAt: row[3] as string,
+            updatedAt: row[4] as string,
+        }));
+    } catch (e) {
+        console.warn("FTS search failed, falling back to LIKE:", e);
+        // Fallback to LIKE if FTS fails or module missing
+        const likeQuery = `%${query.toLowerCase()}%`;
+        const result = database.exec(`
+            SELECT * FROM notes 
+            WHERE LOWER(title) LIKE ? OR LOWER(content) LIKE ?
+            ORDER BY createdAt DESC
+        `, [likeQuery, likeQuery]);
+
+        if (result.length === 0) return [];
+
+        return result[0].values.map((row) => ({
+            id: row[0] as number,
+            title: row[1] as string | null,
+            content: row[2] as string,
+            createdAt: row[3] as string,
+            updatedAt: row[4] as string,
+        }));
+    }
 }
 
 /**
