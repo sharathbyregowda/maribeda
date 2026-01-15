@@ -16,7 +16,7 @@ export function BackupRestore({ notes, onRestore }: BackupRestoreProps) {
         const url = URL.createObjectURL(blob);
 
         const timestamp = new Date().toISOString().split('T')[0];
-        const filename = `nenasu-backup-${timestamp}.json`;
+        const filename = `maribeda-backup-${timestamp}.json`;
 
         const link = document.createElement('a');
         link.href = url;
@@ -51,7 +51,7 @@ export function BackupRestore({ notes, onRestore }: BackupRestoreProps) {
                 onRestore(importedNotes);
             }
         } catch (error) {
-            alert('Failed to restore backup. Please ensure the file is a valid Nenasu backup.');
+            alert('Failed to restore backup. Please ensure the file is a valid Maribeda backup.');
         }
 
         // Reset input

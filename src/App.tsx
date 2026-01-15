@@ -53,7 +53,7 @@ function App() {
     return (
       <div className="app-loading">
         <div className="loading-spinner"></div>
-        <p>Initializing Nenasu...</p>
+        <p>Initializing Maribeda...</p>
       </div>
     )
   }
@@ -72,7 +72,7 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-logo">
-          <img src="/logo.png" alt="Nenasu Logo" className="logo-image" />
+          <img src="/logo.jpg" alt="Maribeda Logo" className="logo-image" />
         </div>
       </header>
 
