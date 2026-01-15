@@ -1,0 +1,155 @@
+.note-input-container {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.note-input-container:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md), 0 0 0 3px var(--color-primary-light);
+}
+
+.note-input-container.editing {
+  border-color: var(--color-accent);
+  background: linear-gradient(135deg, var(--color-card) 0%, rgba(66, 153, 225, 0.05) 100%);
+}
+
+.note-input-title {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  background: var(--color-bg);
+  border-radius: calc(var(--radius) - 4px);
+  margin-bottom: 0.75rem;
+  color: var(--color-text);
+  transition: background 0.2s ease;
+}
+
+.note-input-title:focus {
+  outline: none;
+  background: var(--color-input-focus);
+}
+
+.note-input-title::placeholder {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.note-input-content {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  border: none;
+  background: var(--color-bg);
+  border-radius: calc(var(--radius) - 4px);
+  resize: vertical;
+  min-height: 100px;
+  color: var(--color-text);
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.note-input-content:focus {
+  outline: none;
+  background: var(--color-input-focus);
+}
+
+.note-input-content::placeholder {
+  color: var(--color-text-muted);
+}
+
+.note-input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  gap: 1rem;
+}
+
+.note-input-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.note-input-hint kbd {
+  background: var(--color-bg);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-family: inherit;
+  border: 1px solid var(--color-border);
+}
+
+.note-input-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.note-input-save,
+.note-input-cancel {
+  padding: 0.65rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: calc(var(--radius) - 4px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.note-input-save {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+}
+
+.note-input-save:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 82, 130, 0.4);
+}
+
+.note-input-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.note-input-cancel {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.note-input-cancel:hover {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+@media (max-width: 480px) {
+  .note-input-container {
+    padding: 1rem;
+  }
+
+  .note-input-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .note-input-hint {
+    order: 2;
+    text-align: center;
+  }
+
+  .note-input-buttons {
+    width: 100%;
+  }
+
+  .note-input-save,
+  .note-input-cancel {
+    flex: 1;
+  }
+}
