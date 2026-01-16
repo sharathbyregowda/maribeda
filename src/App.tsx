@@ -91,7 +91,7 @@ function App() {
 
   return (
     <div className="app">
-      <header className={`app-header ${isScrolled ? 'scrolled' : ''}`}>
+      <header className={`app-header ${isScrolled || editingNote ? 'scrolled' : ''}`}>
         <div className="app-logo">
           <img src="/logo.jpg" alt="Maribeda Logo" className="logo-image" />
         </div>

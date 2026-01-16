@@ -65,7 +65,7 @@ export function NoteInputComponent({ onSave, editingNote, onCancelEdit }: NoteIn
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 onKeyDown={handleKeyDown}
-                rows={3}
+                rows={isEditing ? 15 : 3}
             />
             <div className="note-input-actions">
                 <span className="note-input-hint">
