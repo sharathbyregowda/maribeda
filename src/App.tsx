@@ -14,6 +14,17 @@ function App() {
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  // Handle scroll for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Handle async search
   useEffect(() => {
@@ -80,7 +91,7 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
+      <header className={`app-header ${isScrolled ? 'scrolled' : ''}`}>
         <div className="app-logo">
           <img src="/logo.jpg" alt="Maribeda Logo" className="logo-image" />
         </div>
