@@ -10,7 +10,7 @@ let searchIndex: any | null = null;
  */
 export function initSearchIndex(): any {
     searchIndex = new FlexSearch.Document({
-        tokenize: 'forward',
+        tokenize: 'full',
         document: {
             id: 'id',
             index: ['title', 'content'],
