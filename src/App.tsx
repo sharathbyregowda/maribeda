@@ -10,18 +10,27 @@ import { Note, NoteInput } from './types'
 import './App.css'
 
 function App() {
-  const { notes, isLoading, error, addNote, updateNote, deleteNote, search, restoreFromBackup, isReady } = useNotes()
+  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, search, restoreFromBackup, isReady } = useNotes()
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
+  const [searchResults, setSearchResults] = useState<Note[]>([])
 
-  // Search results
-  const displayedNotes = useMemo(() => {
-    if (!isReady) return []
-    if (debouncedQuery) {
-      return search(debouncedQuery)
+  // Handle async search
+  useEffect(() => {
+    if (!isReady || !isSearchReady) {
+      setSearchResults([])
+      return
     }
-    return notes
-  }, [notes, debouncedQuery, search, isReady])
+
+    if (debouncedQuery) {
+      search(debouncedQuery).then(results => setSearchResults(results))
+    } else {
+      setSearchResults(notes)
+    }
+  }, [debouncedQuery, notes, search, isReady, isSearchReady])
+
+  // Display either search results or all notes
+  const displayedNotes = debouncedQuery ? searchResults : notes
 
   const handleSave = (input: NoteInput) => {
     if (editingNote) {
@@ -50,11 +59,11 @@ function App() {
     restoreFromBackup(restoredNotes)
   }
 
-  if (isLoading) {
+  if (isLoading || !isSearchReady) {
     return (
       <div className="app-loading">
         <div className="loading-spinner"></div>
-        <p>Initializing Maribeda...</p>
+        <p>{isLoading ? 'Initializing Maribeda...' : 'Building search index...'}</p>
       </div>
     )
   }

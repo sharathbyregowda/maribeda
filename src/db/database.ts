@@ -26,7 +26,7 @@ export async function initDatabase(): Promise<Database> {
         db = new SQL.Database();
     }
 
-    // Ensure schema and FTS tables exist (idempotent)
+    // Ensure schema exists (idempotent)
     createSchema(db);
 
     return db;
@@ -34,6 +34,7 @@ export async function initDatabase(): Promise<Database> {
 
 /**
  * Create the database schema
+ * Note: Search is handled by FlexSearch, not SQLite FTS
  */
 function createSchema(database: Database): void {
     // Notes table with title, content, and timestamps
@@ -49,49 +50,6 @@ function createSchema(database: Database): void {
 
     // Create indexes for faster standard access
     database.run(`CREATE INDEX IF NOT EXISTS idx_notes_createdAt ON notes(createdAt DESC)`);
-
-    // FTS5 Virtual Table (External Content)
-    // We use external content to save space, referencing the 'notes' table
-    try {
-        database.run(`
-            CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
-                title, 
-                content, 
-                content='notes', 
-                content_rowid='id'
-            )
-        `);
-
-        // Triggers to keep FTS index in sync with the main table
-        database.run(`
-            CREATE TRIGGER IF NOT EXISTS notes_ai AFTER INSERT ON notes BEGIN
-                INSERT INTO notes_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
-            END;
-        `);
-
-        database.run(`
-            CREATE TRIGGER IF NOT EXISTS notes_ad AFTER DELETE ON notes BEGIN
-                INSERT INTO notes_fts(notes_fts, rowid, title, content) VALUES('delete', old.id, old.title, old.content);
-            END;
-        `);
-
-        database.run(`
-            CREATE TRIGGER IF NOT EXISTS notes_au AFTER UPDATE ON notes BEGIN
-                INSERT INTO notes_fts(notes_fts, rowid, title, content) VALUES('delete', old.id, old.title, old.content);
-                INSERT INTO notes_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
-            END;
-        `);
-
-        // Attempt to populate FTS if it's empty but notes exist (migration)
-        // A full rebuild ensures consistency
-        database.run("INSERT INTO notes_fts(notes_fts) VALUES('rebuild')");
-
-    } catch (e) {
-        console.warn("FTS5 init failed (browser might not support it):", e);
-        // Fallback to standard indexes if FTS5 fails
-        database.run(`CREATE INDEX IF NOT EXISTS idx_notes_content ON notes(content)`);
-        database.run(`CREATE INDEX IF NOT EXISTS idx_notes_title ON notes(title)`);
-    }
 }
 
 /**

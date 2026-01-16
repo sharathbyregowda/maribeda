@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",
+    "flexsearch": "^0.8.212",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sql.js": "^1.13.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/flexsearch": "^0.7.6",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
