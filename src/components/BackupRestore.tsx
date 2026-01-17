@@ -14,7 +14,7 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
     const [isSharing, setIsSharing] = useState(false);
 
     const triggerDownload = (data: Uint8Array, filename: string) => {
-        const blob = new Blob([data.buffer as ArrayBuffer], { type: 'application/x-sqlite3' });
+        const blob = new Blob([data.buffer as ArrayBuffer], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -31,7 +31,7 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
 
         try {
             const binaryData = exportDatabase();
-            const file = new File([binaryData.buffer as ArrayBuffer], filename, { type: 'application/x-sqlite3' });
+            const file = new File([binaryData.buffer as ArrayBuffer], filename, { type: 'application/octet-stream' });
 
             // Check if Web Share API with file support is available (mobile)
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
