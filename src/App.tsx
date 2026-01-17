@@ -7,6 +7,7 @@ import { SearchBar } from './components/SearchBar'
 import { NoteList } from './components/NoteList'
 import { BackupRestore } from './components/BackupRestore'
 import { InstallPrompt } from './components/InstallPrompt'
+import { ThemeToggle } from './components/ThemeToggle'
 import { Note, NoteInput } from './types'
 import './App.css'
 
@@ -16,6 +17,11 @@ function App() {
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
   const [isScrolled, setIsScrolled] = useState(false)
+  const [theme, setTheme] = useState(() =>
+    typeof document !== 'undefined'
+      ? document.documentElement.getAttribute('data-theme') || 'light'
+      : 'light'
+  )
 
   // Handle scroll for sticky header
   useEffect(() => {
@@ -52,6 +58,19 @@ function App() {
       })
     }
   }, [])
+
+  // Listen for theme changes
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          setTheme(document.documentElement.getAttribute('data-theme') || 'light');
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
 
   // Handle async search
   useEffect(() => {
@@ -118,9 +137,14 @@ function App() {
 
   return (
     <div className="app">
+      <ThemeToggle />
       <header className={`app-header ${isScrolled || editingNote ? 'scrolled' : ''}`}>
         <div className="app-logo">
-          <img src="/logo.jpg" alt="Maribeda Logo" className="logo-image" />
+          <img
+            src={theme === 'dark' ? '/logo-dark.png' : '/logo.png'}
+            alt="Maribeda Logo"
+            className="logo-image"
+          />
         </div>
       </header>
 

@@ -1,10 +1,10 @@
 /* Design Tokens */
 :root {
   /* Colors - Navy Blue theme from logo */
-  --color-primary: #2c5282;
-  --color-primary-dark: #1a365d;
-  --color-primary-light: rgba(44, 82, 130, 0.1);
-  --color-accent: #4299e1;
+  --color-primary: #4a90a4;
+  --color-primary-dark: #3a7a8a;
+  --color-primary-light: rgba(74, 144, 164, 0.1);
+  --color-accent: #5ebdd6;
 
   /* Background & Cards */
   --color-bg: #f0f4f8;
@@ -32,6 +32,37 @@
   /* Layout */
   --radius: 12px;
   --max-width: 700px;
+
+  /* Logo */
+  --logo-url: url('/logo.jpg');
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --color-primary: #5ebdd6;
+  --color-primary-dark: #4a9ab0;
+  --color-primary-light: rgba(94, 189, 214, 0.15);
+  --color-accent: #7dd3e8;
+
+  --color-bg: #0f172a;
+  --color-card: #1e293b;
+  --color-input-focus: #334155;
+
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+
+  --color-border: #334155;
+
+  --color-danger: #f87171;
+  --color-danger-dark: #ef4444;
+  --color-danger-light: rgba(248, 113, 113, 0.15);
+  --color-success: #4ade80;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
+
+  --logo-url: url('/logo-dark.png');
 }
 
 /* Reset & Base */
@@ -53,6 +84,7 @@ body {
   line-height: 1.6;
   color: var(--color-text);
   background: var(--color-bg);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Typography */
@@ -128,6 +160,44 @@ button,
 input,
 textarea {
   font-family: inherit;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Card animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 }
 
 /* Mobile adjustments */
