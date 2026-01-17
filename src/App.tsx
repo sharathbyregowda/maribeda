@@ -6,6 +6,7 @@ import { NoteInputComponent } from './components/NoteInputComponent'
 import { SearchBar } from './components/SearchBar'
 import { NoteList } from './components/NoteList'
 import { BackupRestore } from './components/BackupRestore'
+import { InstallPrompt } from './components/InstallPrompt'
 import { Note, NoteInput } from './types'
 import './App.css'
 
@@ -160,6 +161,7 @@ function App() {
       <footer className="app-footer">
         <p>All data stored locally on your device • No cloud • No accounts</p>
       </footer>
+      <InstallPrompt />
       <Analytics />
     </div>
   )
