@@ -25,9 +25,10 @@ Powered by our **hybrid architecture**:
 - **Sub-50ms indexing** - Even with thousands of notes
 
 ### 💾 **Your Data, Your Control**
-- **One-click backup** - Export everything as JSON
-- **One-click restore** - Import from any device
-- **No vendor lock-in** - Plain JSON you can read
+- **Magic Share Button** - AirDrop/Nearby Share on mobile, download on desktop
+- **SQLite Binary Export** - Full database backup in one file
+- **Legacy JSON Support** - Still accepts old JSON backups
+- **Open with Maribeda** - PWA file handling for `.sqlite` files
 
 ---
 
@@ -90,8 +91,9 @@ Maribeda uses a **best-of-breed hybrid approach** that separates concerns for ma
 - 🎨 **Clean UI** - Distraction-free writing experience
 - 📱 **Responsive** - Works beautifully on desktop and mobile
 - 🌙 **Dark Mode Ready** - Easy on the eyes, day or night
-- 💾 **Backup/Restore** - Export and import your entire diary
+- 💾 **Magic Share** - Transfer your diary via AirDrop, Nearby Share, or direct download
 - 🔗 **URL Detection** - Automatically linkifies URLs in your notes
+- 📲 **PWA Ready** - Install as app, open `.sqlite` files directly
 
 ---
 

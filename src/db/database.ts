@@ -289,3 +289,25 @@ function persistToIndexedDB(): void {
         store.put(data, KEY);
     };
 }
+
+/**
+ * Export the raw SQLite database as a Uint8Array
+ */
+export function exportDatabase(): Uint8Array {
+    const database = getDatabase();
+    return database.export();
+}
+
+/**
+ * Restore database from a SQLite binary (Uint8Array)
+ * Used for restoring from .sqlite backup files
+ */
+export async function restoreFromBinary(data: Uint8Array): Promise<void> {
+    const SQL = await initSqlJs({
+        locateFile: (file: string) => `${SQL_JS_CDN}${file}`,
+    });
+
+    db = new SQL.Database(data);
+    createSchema(db); // Safe: uses IF NOT EXISTS
+    persistToIndexedDB();
+}

@@ -26,6 +26,32 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Handle PWA file launch (Open with Maribeda)
+  useEffect(() => {
+    if ('launchQueue' in window) {
+      const launchQueue = (window as any).launchQueue
+      launchQueue.setConsumer(async (launchParams: any) => {
+        if (launchParams.files?.length) {
+          try {
+            const fileHandle = launchParams.files[0]
+            const file = await fileHandle.getFile()
+            const arrayBuffer = await file.arrayBuffer()
+
+            // Import restoreFromBinary dynamically to avoid circular deps
+            const { restoreFromBinary } = await import('./db/database')
+            await restoreFromBinary(new Uint8Array(arrayBuffer))
+
+            alert('Database restored! The page will reload to apply changes.')
+            window.location.reload()
+          } catch (err) {
+            console.error('Failed to restore from launched file:', err)
+            alert('Failed to restore from file. Please use the Restore button instead.')
+          }
+        }
+      })
+    }
+  }, [])
+
   // Handle async search
   useEffect(() => {
     if (!isReady || !isSearchReady) {
