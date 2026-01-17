@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
+import { zipSync, unzipSync } from 'fflate';
 import { Note } from '../types';
-import { exportDatabase, restoreFromBinary, getAllNotes } from '../db/database';
+import { exportDatabase, restoreFromBinary } from '../db/database';
 import './BackupRestore.css';
 
 interface BackupRestoreProps {
@@ -13,8 +14,8 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isSharing, setIsSharing] = useState(false);
 
-    const triggerDownload = (data: Uint8Array, filename: string) => {
-        const blob = new Blob([data.buffer as ArrayBuffer], { type: 'application/octet-stream' });
+    const triggerDownload = (data: Uint8Array, filename: string, mimeType: string) => {
+        const blob = new Blob([data.buffer as ArrayBuffer], { type: mimeType });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -27,13 +28,20 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
 
     const handleBackup = async () => {
         const timestamp = new Date().toISOString().split('T')[0];
-        const filename = `maribeda-backup-${timestamp}.sqlite`;
+        const zipFilename = `maribeda-backup-${timestamp}.zip`;
+        const sqliteFilename = `maribeda.sqlite`;
 
         try {
             const binaryData = exportDatabase();
-            const file = new File([binaryData.buffer as ArrayBuffer], filename, { type: 'application/octet-stream' });
 
-            // Check if Web Share API with file support is available (mobile)
+            // Wrap SQLite binary in a ZIP file
+            const zipped = zipSync({
+                [sqliteFilename]: binaryData
+            });
+
+            const file = new File([zipped.buffer as ArrayBuffer], zipFilename, { type: 'application/zip' });
+
+            // Check if Web Share API with file support is available
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 setIsSharing(true);
                 try {
@@ -45,14 +53,14 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
                 } catch (err) {
                     // User cancelled share or error - fall back to download
                     if ((err as Error).name !== 'AbortError') {
-                        triggerDownload(binaryData, filename);
+                        triggerDownload(zipped, zipFilename, 'application/zip');
                     }
                 } finally {
                     setIsSharing(false);
                 }
             } else {
                 // Desktop fallback: standard download
-                triggerDownload(binaryData, filename);
+                triggerDownload(zipped, zipFilename, 'application/zip');
             }
         } catch (error) {
             console.error('Backup failed:', error);
@@ -69,11 +77,21 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
         if (!file) return;
 
         try {
-            // Check file type: SQLite binary or legacy JSON
-            if (file.name.endsWith('.sqlite') || file.name.endsWith('.db')) {
-                // Binary restore
+            if (file.name.endsWith('.zip')) {
+                // ZIP file - extract and restore
                 const arrayBuffer = await file.arrayBuffer();
-                const restoredNotes = await restoreFromBinary(new Uint8Array(arrayBuffer));
+                const unzipped = unzipSync(new Uint8Array(arrayBuffer));
+
+                // Find the SQLite file inside the ZIP
+                const sqliteFile = Object.keys(unzipped).find(
+                    name => name.endsWith('.sqlite') || name.endsWith('.db')
+                );
+
+                if (!sqliteFile) {
+                    throw new Error('No SQLite database found in ZIP file');
+                }
+
+                await restoreFromBinary(unzipped[sqliteFile]);
 
                 const confirmRestore = window.confirm(
                     'Database restored successfully! The page will reload to apply changes.'
@@ -82,7 +100,19 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
                 if (confirmRestore) {
                     window.location.reload();
                 }
-            } else {
+            } else if (file.name.endsWith('.sqlite') || file.name.endsWith('.db')) {
+                // Direct SQLite binary restore (legacy support)
+                const arrayBuffer = await file.arrayBuffer();
+                await restoreFromBinary(new Uint8Array(arrayBuffer));
+
+                const confirmRestore = window.confirm(
+                    'Database restored successfully! The page will reload to apply changes.'
+                );
+
+                if (confirmRestore) {
+                    window.location.reload();
+                }
+            } else if (file.name.endsWith('.json')) {
                 // Legacy JSON restore
                 const content = await file.text();
                 const importedNotes = JSON.parse(content) as Note[];
@@ -98,6 +128,8 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
                 if (confirmRestore) {
                     onRestore(importedNotes);
                 }
+            } else {
+                throw new Error('Unsupported file format. Please use .zip, .sqlite, .db, or .json files.');
             }
         } catch (error) {
             console.error('Restore failed:', error);
@@ -183,7 +215,7 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".json,.sqlite,.db"
+                    accept=".zip,.json,.sqlite,.db"
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
                 />
