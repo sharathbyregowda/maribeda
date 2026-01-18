@@ -185,6 +185,7 @@ function App() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             isSearching={isSearching}
+            searchQuery={debouncedQuery}
           />
         </section>
 

@@ -8,9 +8,10 @@ interface NoteListProps {
     onEdit: (note: Note) => void;
     onDelete: (id: number) => void;
     isSearching?: boolean;
+    searchQuery?: string;
 }
 
-export function NoteList({ notes, onEdit, onDelete, isSearching }: NoteListProps) {
+export function NoteList({ notes, onEdit, onDelete, isSearching, searchQuery }: NoteListProps) {
     if (notes.length === 0) {
         return (
             <div className="note-list-empty">
@@ -68,6 +69,7 @@ export function NoteList({ notes, onEdit, onDelete, isSearching }: NoteListProps
                     note={note}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    searchQuery={searchQuery}
                 />
             ))}
         </div>

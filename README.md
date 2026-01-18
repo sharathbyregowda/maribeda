@@ -23,6 +23,9 @@ Powered by our **hybrid architecture**:
 - **Typo tolerance** - "programing" finds "programming"
 - **Fuzzy matching** - Search smarter, not harder
 - **Sub-50ms indexing** - Even with thousands of notes
+- **Contextual snippets** - See matching text in context, not card beginnings
+- **Highlighted matches** - Instantly spot what you're looking for
+- **Expand to see all** - Click "+N more" to view all matches in a card
 
 ### 💾 **Your Data, Your Control**
 - **Magic Share Button** - AirDrop/Nearby Share on mobile, download on desktop

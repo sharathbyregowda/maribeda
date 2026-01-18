@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Note } from '../types';
 import { linkifyText } from '../utils/urlDetector';
 import { formatRelativeTime, formatFullDate } from '../utils/dateFormatter';
+import { extractSnippet, highlightMatches } from '../utils/snippetExtractor';
 import './NoteCard.css';
 
 interface NoteCardProps {
     note: Note;
     onEdit: (note: Note) => void;
     onDelete: (id: number) => void;
+    searchQuery?: string;
 }
 
-export function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, searchQuery }: NoteCardProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const handleDeleteClick = () => {
         setShowDeleteConfirm(true);
@@ -26,10 +29,64 @@ export function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
         setShowDeleteConfirm(false);
     };
 
+    // Extract snippet and count when searching
+    const snippetResult = useMemo(() => {
+        if (!searchQuery?.trim()) return null;
+        return extractSnippet(note.content, searchQuery);
+    }, [note.content, searchQuery]);
+
+    // Render content: snippet with highlights when searching, full content otherwise
+    const renderContent = () => {
+        // When searching and we have matches
+        if (snippetResult && snippetResult.matchCount > 0) {
+            // Expanded mode: show full content with all matches highlighted
+            if (isExpanded) {
+                return (
+                    <div className="search-expanded">
+                        {note.content.split('\n').map((line, index) => (
+                            <p key={index}>
+                                {highlightMatches(line, searchQuery!)}
+                            </p>
+                        ))}
+                        <button
+                            className="collapse-button"
+                            onClick={() => setIsExpanded(false)}
+                        >
+                            Show less
+                        </button>
+                    </div>
+                );
+            }
+
+            // Snippet mode: show contextual snippet
+            return (
+                <div className="search-snippet">
+                    <p>{highlightMatches(snippetResult.snippet, searchQuery!)}</p>
+                    {snippetResult.matchCount > 1 && (
+                        <button
+                            className="match-count-badge"
+                            onClick={() => setIsExpanded(true)}
+                            title="Click to see all matches"
+                        >
+                            +{snippetResult.matchCount - 1} more
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        // Default: show full content with linkify
+        return note.content.split('\n').map((line, index) => (
+            <p key={index}>
+                {linkifyText(line)}
+            </p>
+        ));
+    };
+
     return (
         <div className="note-card">
             <div className="note-card-header">
-                {note.title && <h3 className="note-card-title">{note.title}</h3>}
+                {note.title && <h3 className="note-card-title">{highlightMatches(note.title, searchQuery || '')}</h3>}
                 <time
                     className="note-card-time"
                     title={formatFullDate(note.createdAt)}
@@ -39,11 +96,7 @@ export function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
             </div>
 
             <div className="note-card-content">
-                {note.content.split('\n').map((line, index) => (
-                    <p key={index}>
-                        {linkifyText(line)}
-                    </p>
-                ))}
+                {renderContent()}
             </div>
 
             <div className="note-card-actions">

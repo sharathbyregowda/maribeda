@@ -1,0 +1,126 @@
+import React from 'react';
+
+export interface SnippetResult {
+    /** The extracted snippet with ellipses if truncated */
+    snippet: string;
+    /** Total number of matches found in the content */
+    matchCount: number;
+    /** Index position of the first match */
+    matchIndex: number;
+}
+
+/**
+ * Extracts a contextual snippet around the first match of a query in content.
+ * Returns the snippet with surrounding context and total match count.
+ * 
+ * @param content - The full text content to search in
+ * @param query - The search term to find
+ * @param contextChars - Number of characters to include before/after match (default: 40)
+ * @returns SnippetResult with snippet, matchCount, and matchIndex
+ */
+export function extractSnippet(
+    content: string,
+    query: string,
+    contextChars: number = 40
+): SnippetResult {
+    if (!query.trim()) {
+        return { snippet: content, matchCount: 0, matchIndex: -1 };
+    }
+
+    const lowerContent = content.toLowerCase();
+    const lowerQuery = query.toLowerCase().trim();
+
+    // Find first match position
+    const matchIndex = lowerContent.indexOf(lowerQuery);
+
+    if (matchIndex === -1) {
+        return { snippet: content, matchCount: 0, matchIndex: -1 };
+    }
+
+    // Count total matches
+    let matchCount = 0;
+    let searchPos = 0;
+    while (searchPos < lowerContent.length) {
+        const pos = lowerContent.indexOf(lowerQuery, searchPos);
+        if (pos === -1) break;
+        matchCount++;
+        searchPos = pos + 1;
+    }
+
+    // Calculate snippet boundaries
+    const start = Math.max(0, matchIndex - contextChars);
+    const end = Math.min(content.length, matchIndex + lowerQuery.length + contextChars);
+
+    // Extract snippet
+    let snippet = content.substring(start, end);
+
+    // Add ellipses if truncated
+    if (start > 0) {
+        // Find a word boundary to start from
+        const spaceIndex = snippet.indexOf(' ');
+        if (spaceIndex > 0 && spaceIndex < 15) {
+            snippet = snippet.substring(spaceIndex + 1);
+        }
+        snippet = '...' + snippet;
+    }
+    if (end < content.length) {
+        // Find a word boundary to end at
+        const lastSpaceIndex = snippet.lastIndexOf(' ');
+        if (lastSpaceIndex > snippet.length - 15 && lastSpaceIndex > 0) {
+            snippet = snippet.substring(0, lastSpaceIndex);
+        }
+        snippet = snippet + '...';
+    }
+
+    return { snippet, matchCount, matchIndex };
+}
+
+/**
+ * Highlights all occurrences of query in text by wrapping them in <mark> tags.
+ * Case-insensitive matching, preserves original casing.
+ * 
+ * @param text - The text to highlight
+ * @param query - The search term to highlight
+ * @returns Array of React nodes with highlighted matches
+ */
+export function highlightMatches(
+    text: string,
+    query: string
+): React.ReactNode[] {
+    if (!query.trim()) {
+        return [text];
+    }
+
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase().trim();
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    let searchPos = 0;
+    while (searchPos < lowerText.length) {
+        const matchIndex = lowerText.indexOf(lowerQuery, searchPos);
+        if (matchIndex === -1) break;
+
+        // Add text before match
+        if (matchIndex > lastIndex) {
+            parts.push(text.substring(lastIndex, matchIndex));
+        }
+
+        // Add highlighted match (preserving original case)
+        parts.push(
+            <mark key={matchIndex} className="search-highlight">
+                {text.substring(matchIndex, matchIndex + lowerQuery.length)}
+            </mark>
+        );
+
+        lastIndex = matchIndex + lowerQuery.length;
+        searchPos = lastIndex;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+        parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : [text];
+}
