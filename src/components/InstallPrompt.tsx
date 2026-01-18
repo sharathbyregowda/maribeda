@@ -102,7 +102,7 @@ export function InstallPrompt() {
     return (
         <div className="install-prompt">
             <div className="install-prompt-content">
-                <img src="/favicon.jpg" alt="Maribeda" className="install-prompt-icon" />
+                <img src="/maribeda-favicon.jpeg" alt="Maribeda" className="install-prompt-icon" />
                 <div className="install-prompt-text">
                     <strong>Install Maribeda</strong>
                     {isIOS ? (

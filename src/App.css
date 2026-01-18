@@ -65,8 +65,8 @@
 
 /* Dark mode logo blending */
 [data-theme="dark"] .logo-image {
-  mix-blend-mode: screen;
-  filter: drop-shadow(0 4px 10px rgba(94, 189, 214, 0.3));
+  /* mix-blend-mode: screen; */
+  filter: brightness(0) invert(1) drop-shadow(0 4px 10px rgba(94, 189, 214, 0.3));
 }
 
 /* Shrink logo when scrolled */
