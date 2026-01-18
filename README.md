@@ -1,6 +1,6 @@
 # Maribeda
 
-![Maribeda Logo](public/logo.png)
+![Maribeda Logo](public/maribeda-logo.jpeg)
 
 **Don't forget a thing.**
 
