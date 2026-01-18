@@ -1,0 +1,64 @@
+.fab-add-note {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fabEnter 0.3s ease-out;
+}
+
+.fab-add-note:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fab-add-note:active {
+    transform: scale(0.95);
+}
+
+.fab-add-note svg {
+    transition: transform 0.3s ease;
+}
+
+@keyframes fabEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.5) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .fab-add-note {
+    background: linear-gradient(135deg, #5ebed6, #3a9ab8);
+    box-shadow: 0 4px 20px rgba(94, 190, 214, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .fab-add-note:hover {
+    box-shadow: 0 6px 28px rgba(94, 190, 214, 0.5), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Mobile positioning - account for safe areas */
+@media (max-width: 480px) {
+    .fab-add-note {
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+    }
+}

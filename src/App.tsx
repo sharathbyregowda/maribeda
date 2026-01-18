@@ -8,6 +8,7 @@ import { NoteList } from './components/NoteList'
 import { BackupRestore } from './components/BackupRestore'
 import { InstallPrompt } from './components/InstallPrompt'
 import { ThemeToggle } from './components/ThemeToggle'
+import { FloatingAddButton } from './components/FloatingAddButton'
 import { Note, NoteInput } from './types'
 import './App.css'
 
@@ -116,6 +117,11 @@ function App() {
     restoreFromBackup(restoredNotes)
   }
 
+  const handleFabClick = () => {
+    setQuery('')  // Clear search
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   if (isLoading || !isSearchReady) {
     return (
       <div className="app-loading">
@@ -157,13 +163,21 @@ function App() {
           />
         </section>
 
-        <section className="input-section">
-          <NoteInputComponent
-            onSave={handleSave}
-            editingNote={editingNote}
-            onCancelEdit={handleCancelEdit}
-          />
-        </section>
+        {/* Hide input form during search to save screen space, show FAB instead */}
+        {(!isSearching || editingNote) && (
+          <section className="input-section">
+            <NoteInputComponent
+              onSave={handleSave}
+              editingNote={editingNote}
+              onCancelEdit={handleCancelEdit}
+            />
+          </section>
+        )}
+
+        <FloatingAddButton
+          onClick={handleFabClick}
+          visible={isSearching && !editingNote}
+        />
 
         <section className="notes-section">
           <NoteList
