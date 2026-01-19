@@ -9,10 +9,11 @@ interface NoteCardProps {
     note: Note;
     onEdit: (note: Note) => void;
     onDelete: (id: number) => void;
+    onTogglePin: (id: number) => void;
     searchQuery?: string;
 }
 
-export function NoteCard({ note, onEdit, onDelete, searchQuery }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery }: NoteCardProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -84,9 +85,32 @@ export function NoteCard({ note, onEdit, onDelete, searchQuery }: NoteCardProps)
     };
 
     return (
-        <div className="note-card">
+        <div className={`note-card ${note.isPinned ? 'is-pinned' : ''}`}>
             <div className="note-card-header">
-                {note.title && <h3 className="note-card-title">{highlightMatches(note.title, searchQuery || '')}</h3>}
+                <div className="note-card-title-row">
+                    {note.title && <h3 className="note-card-title">{highlightMatches(note.title, searchQuery || '')}</h3>}
+                    <button
+                        className={`note-pin-btn ${note.isPinned ? 'pinned' : ''}`}
+                        onClick={() => onTogglePin(note.id)}
+                        aria-label={note.isPinned ? 'Unpin note' : 'Pin note'}
+                        title={note.isPinned ? 'Unpin note' : 'Pin note'}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill={note.isPinned ? 'currentColor' : 'none'}
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M12 17v5" />
+                            <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76z" />
+                        </svg>
+                    </button>
+                </div>
                 <time
                     className="note-card-time"
                     title={formatFullDate(note.createdAt)}

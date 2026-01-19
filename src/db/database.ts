@@ -37,19 +37,28 @@ export async function initDatabase(): Promise<Database> {
  * Note: Search is handled by FlexSearch, not SQLite FTS
  */
 function createSchema(database: Database): void {
-    // Notes table with title, content, and timestamps
+    // Notes table with title, content, timestamps, and pin status
     database.run(`
     CREATE TABLE IF NOT EXISTS notes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT,
       content TEXT NOT NULL,
+      isPinned INTEGER DEFAULT 0,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL
     )
   `);
 
+    // Migration: Add isPinned column if it doesn't exist (for existing databases)
+    try {
+        database.run(`ALTER TABLE notes ADD COLUMN isPinned INTEGER DEFAULT 0`);
+    } catch {
+        // Column already exists, ignore
+    }
+
     // Create indexes for faster standard access
     database.run(`CREATE INDEX IF NOT EXISTS idx_notes_createdAt ON notes(createdAt DESC)`);
+    database.run(`CREATE INDEX IF NOT EXISTS idx_notes_isPinned ON notes(isPinned DESC)`);
 }
 
 /**
@@ -70,8 +79,8 @@ export function addNote(input: NoteInput): Note {
     const now = new Date().toISOString();
 
     database.run(
-        'INSERT INTO notes (title, content, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [input.title || null, input.content, now, now]
+        'INSERT INTO notes (title, content, isPinned, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
+        [input.title || null, input.content, 0, now, now]
     );
 
     const result = database.exec('SELECT last_insert_rowid() as id');
@@ -83,6 +92,7 @@ export function addNote(input: NoteInput): Note {
         id,
         title: input.title || null,
         content: input.content,
+        isPinned: false,
         createdAt: now,
         updatedAt: now,
     };
@@ -100,7 +110,7 @@ export function updateNote(id: number, input: NoteInput): Note | null {
         [input.title || null, input.content, now, id]
     );
 
-    const result = database.exec('SELECT * FROM notes WHERE id = ?', [id]);
+    const result = database.exec('SELECT id, title, content, isPinned, createdAt, updatedAt FROM notes WHERE id = ?', [id]);
 
     if (result.length === 0 || result[0].values.length === 0) {
         return null;
@@ -113,8 +123,9 @@ export function updateNote(id: number, input: NoteInput): Note | null {
         id: row[0] as number,
         title: row[1] as string | null,
         content: row[2] as string,
-        createdAt: row[3] as string,
-        updatedAt: row[4] as string,
+        isPinned: Boolean(row[3]),
+        createdAt: row[4] as string,
+        updatedAt: row[5] as string,
     };
 }
 
@@ -129,11 +140,12 @@ export function deleteNote(id: number): boolean {
 }
 
 /**
- * Get all notes in reverse chronological order
+ * Get all notes with pinned notes first, then by reverse chronological order
  */
 export function getAllNotes(): Note[] {
     const database = getDatabase();
-    const result = database.exec('SELECT * FROM notes ORDER BY createdAt DESC');
+    // Use explicit column list to handle migration where isPinned may be added at different positions
+    const result = database.exec('SELECT id, title, content, isPinned, createdAt, updatedAt FROM notes ORDER BY isPinned DESC, createdAt DESC');
 
     if (result.length === 0) return [];
 
@@ -141,9 +153,45 @@ export function getAllNotes(): Note[] {
         id: row[0] as number,
         title: row[1] as string | null,
         content: row[2] as string,
-        createdAt: row[3] as string,
-        updatedAt: row[4] as string,
+        isPinned: Boolean(row[3]),
+        createdAt: row[4] as string,
+        updatedAt: row[5] as string,
     }));
+}
+
+/**
+ * Toggle the pinned status of a note
+ */
+export function toggleNotePin(id: number): Note | null {
+    const database = getDatabase();
+
+    // Get current pin status
+    const current = database.exec('SELECT isPinned FROM notes WHERE id = ?', [id]);
+    if (current.length === 0 || current[0].values.length === 0) {
+        return null;
+    }
+
+    const currentPinned = Boolean(current[0].values[0][0]);
+    const newPinned = currentPinned ? 0 : 1;
+
+    database.run('UPDATE notes SET isPinned = ? WHERE id = ?', [newPinned, id]);
+
+    const result = database.exec('SELECT id, title, content, isPinned, createdAt, updatedAt FROM notes WHERE id = ?', [id]);
+    if (result.length === 0 || result[0].values.length === 0) {
+        return null;
+    }
+
+    persistToIndexedDB();
+
+    const row = result[0].values[0];
+    return {
+        id: row[0] as number,
+        title: row[1] as string | null,
+        content: row[2] as string,
+        isPinned: Boolean(row[3]),
+        createdAt: row[4] as string,
+        updatedAt: row[5] as string,
+    };
 }
 
 /**
@@ -180,8 +228,9 @@ export function searchNotes(query: string): Note[] {
             id: row[0] as number,
             title: row[1] as string | null,
             content: row[2] as string,
-            createdAt: row[3] as string,
-            updatedAt: row[4] as string,
+            isPinned: Boolean(row[3]),
+            createdAt: row[4] as string,
+            updatedAt: row[5] as string,
         }));
     } catch (e) {
         console.warn("FTS search failed, falling back to LIKE:", e);
@@ -199,8 +248,9 @@ export function searchNotes(query: string): Note[] {
             id: row[0] as number,
             title: row[1] as string | null,
             content: row[2] as string,
-            createdAt: row[3] as string,
-            updatedAt: row[4] as string,
+            isPinned: Boolean(row[3]),
+            createdAt: row[4] as string,
+            updatedAt: row[5] as string,
         }));
     }
 }

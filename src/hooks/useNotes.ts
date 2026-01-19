@@ -6,6 +6,7 @@ import {
     addNote as dbAddNote,
     updateNote as dbUpdateNote,
     deleteNote as dbDeleteNote,
+    toggleNotePin as dbToggleNotePin,
     clearAllNotes,
     importNotesFromJson,
 } from '../db/database';
@@ -108,6 +109,13 @@ export function useNotes() {
         setNotes(getAllNotes());
     }, [db]);
 
+    const togglePin = useCallback((id: number) => {
+        if (!db) return null;
+        const note = dbToggleNotePin(id);
+        setNotes(getAllNotes());
+        return note;
+    }, [db]);
+
     const restoreFromBackup = useCallback(async (notesData: Note[]) => {
         if (!db) return 0;
         clearAllNotes();
@@ -131,6 +139,7 @@ export function useNotes() {
         addNote,
         updateNote,
         deleteNote: deleteNoteById,
+        togglePin,
         search,
         refreshNotes,
         restoreFromBackup,

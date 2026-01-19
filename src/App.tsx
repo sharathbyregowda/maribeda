@@ -13,7 +13,7 @@ import { Note, NoteInput } from './types'
 import './App.css'
 
 function App() {
-  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, search, restoreFromBackup, isReady } = useNotes()
+  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, search, restoreFromBackup, isReady } = useNotes()
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
@@ -214,6 +214,7 @@ function App() {
             notes={displayedNotes}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onTogglePin={togglePin}
             isSearching={isSearching}
             searchQuery={debouncedQuery}
           />
