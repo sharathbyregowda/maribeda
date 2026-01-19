@@ -55,23 +55,18 @@ export function extractSnippet(
     // URL regex to find URLs in content
     const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
 
-    // Find all URLs in the content and extend boundaries to include full URLs
+    // Find URLs that START within our snippet and extend END boundary to include full URLs
+    // We do NOT extend START backwards - that would pull in unrelated URLs before the match
     let match;
     while ((match = urlRegex.exec(content)) !== null) {
         const urlStart = match.index;
         const urlEnd = match.index + match[0].length;
 
-        // If URL overlaps with our snippet boundaries, extend to include full URL
-        if (urlStart < end && urlEnd > start) {
-            // URL is partially or fully in our snippet
-            if (urlStart < start) {
-                // URL starts before snippet - extend start to include it
-                start = urlStart;
-            }
-            if (urlEnd > end) {
-                // URL ends after snippet - extend end to include it
-                end = urlEnd;
-            }
+        // Only extend if URL STARTS within our snippet (not before it)
+        // This ensures we only include URLs that are contextually relevant to the match
+        if (urlStart >= start && urlStart < end && urlEnd > end) {
+            // URL starts in snippet but extends beyond - include the full URL
+            end = urlEnd;
         }
     }
 
