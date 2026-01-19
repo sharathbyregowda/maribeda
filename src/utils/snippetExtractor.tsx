@@ -52,6 +52,17 @@ export function extractSnippet(
     let start = Math.max(0, matchIndex - contextChars);
     let end = Math.min(content.length, matchIndex + lowerQuery.length + contextChars);
 
+    // IMPORTANT: Don't cross newlines going backwards - stay on the same line as the match
+    // Find the last newline before the match
+    const lastNewlineBeforeMatch = content.lastIndexOf('\n', matchIndex);
+    let adjustedToLineBoundary = false;
+    if (lastNewlineBeforeMatch >= 0 && lastNewlineBeforeMatch >= start) {
+        // There's a newline between our calculated start and the match
+        // Start from just after the newline to stay on the match's line
+        start = lastNewlineBeforeMatch + 1;
+        adjustedToLineBoundary = true;
+    }
+
     // URL regex to find URLs in content
     const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
 
@@ -73,21 +84,30 @@ export function extractSnippet(
     // Extract snippet with extended boundaries
     let snippet = content.substring(start, end);
 
-    // Add ellipses if truncated (but only if we didn't extend to include a URL)
+    // Add ellipses if truncated at the start
+    // BUT: skip word-boundary trimming if we already adjusted to a line boundary (we're at a clean start)
     if (start > 0) {
-        // Find a word boundary to start from (but not if it would cut a URL)
-        const spaceIndex = snippet.indexOf(' ');
-        if (spaceIndex > 0 && spaceIndex < 15 && !snippet.substring(0, spaceIndex).includes('://')) {
-            snippet = snippet.substring(spaceIndex + 1);
+        if (!adjustedToLineBoundary) {
+            // Only do word boundary trimming if we didn't adjust to a line boundary
+            const spaceIndex = snippet.indexOf(' ');
+            const firstWord = snippet.substring(0, spaceIndex > 0 ? spaceIndex : snippet.length);
+            const firstWordIsUrl = firstWord.includes('http://') || firstWord.includes('https://') || firstWord.startsWith('www.');
+            if (spaceIndex > 0 && spaceIndex < 15 && !firstWordIsUrl) {
+                snippet = snippet.substring(spaceIndex + 1);
+            }
         }
         snippet = '...' + snippet;
     }
     if (end < content.length) {
         // Find a word boundary to end at (but not if it would cut a URL)
         const lastSpaceIndex = snippet.lastIndexOf(' ');
-        const potentialCut = snippet.substring(lastSpaceIndex);
-        if (lastSpaceIndex > snippet.length - 15 && lastSpaceIndex > 0 && !potentialCut.includes('://')) {
-            snippet = snippet.substring(0, lastSpaceIndex);
+        if (lastSpaceIndex > 0) {
+            const lastWord = snippet.substring(lastSpaceIndex + 1);
+            const lastWordIsUrl = lastWord.includes('http://') || lastWord.includes('https://') || lastWord.startsWith('www.');
+            // Only trim if it's not a URL and it's near the end
+            if (!lastWordIsUrl && lastSpaceIndex > snippet.length - 15) {
+                snippet = snippet.substring(0, lastSpaceIndex);
+            }
         }
         snippet = snippet + '...';
     }

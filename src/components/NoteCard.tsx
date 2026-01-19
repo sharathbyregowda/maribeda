@@ -62,15 +62,15 @@ export function NoteCard({ note, onEdit, onDelete, searchQuery }: NoteCardProps)
             return (
                 <div className="search-snippet">
                     <p>{linkifyAndHighlight(snippetResult.snippet, searchQuery!)}</p>
-                    {snippetResult.matchCount > 1 && (
-                        <button
-                            className="match-count-badge"
-                            onClick={() => setIsExpanded(true)}
-                            title="Click to see all matches"
-                        >
-                            +{snippetResult.matchCount - 1} more
-                        </button>
-                    )}
+                    <button
+                        className="match-count-badge"
+                        onClick={() => setIsExpanded(true)}
+                        title="Click to see full note"
+                    >
+                        {snippetResult.matchCount > 1
+                            ? `+${snippetResult.matchCount - 1} more`
+                            : 'View full'}
+                    </button>
                 </div>
             );
         }

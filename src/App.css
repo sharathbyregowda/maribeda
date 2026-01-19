@@ -40,32 +40,26 @@
 .app-logo {
   display: flex;
   align-items: center;
-  /* Start centered relative to the header */
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  width: max-content;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  justify-content: center;
+  /* Set explicit height to enable smooth height transitions */
+  height: 130px;
+  transition: height 0.25s ease-out;
 }
 
-/* Slide to left when scrolled */
 .app-header.scrolled .app-logo {
-  left: 0;
-  transform: translateX(0);
+  height: 50px;
 }
 
 .logo-image {
   height: 120px;
-  /* Reduced initial size slightly for better proportions */
   width: auto;
   object-fit: contain;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: height 0.25s ease-out;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
 }
 
 /* Dark mode logo blending */
 [data-theme="dark"] .logo-image {
-  /* mix-blend-mode: screen; */
   filter: brightness(0) invert(1) drop-shadow(0 4px 10px rgba(94, 189, 214, 0.3));
 }
 
