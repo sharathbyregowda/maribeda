@@ -132,12 +132,41 @@ const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
  */
 function cleanUrl(url: string): string {
     // Remove trailing ellipsis, periods, commas, etc. that may be captured from snippets
-    return url.replace(/[.,;:!?)]+$/, '').replace(/\.{2,}$/, '');
+    return url.replace(/\.{2,}$/, '').replace(/[.,;:!?)]+$/, '');
+}
+
+/**
+ * Check if a URL appears to be truncated (incomplete)
+ */
+function isTruncatedUrl(url: string): boolean {
+    // If it ends with ellipsis, it's truncated
+    if (url.endsWith('...') || url.endsWith('..')) {
+        return true;
+    }
+
+    // Check if the path appears incomplete (very short after domain, or ends abruptly)
+    const cleaned = cleanUrl(url);
+    try {
+        const urlObj = new URL(cleaned.startsWith('www.') ? `https://${cleaned}` : cleaned);
+        const path = urlObj.pathname + urlObj.search + urlObj.hash;
+
+        // If path is just a single character or ends in middle of a segment, likely truncated
+        // e.g., /s or /sport/f (incomplete paths)
+        if (path.length > 1 && path.length < 4 && !path.endsWith('/')) {
+            return true;
+        }
+    } catch {
+        // Invalid URL, treat as truncated
+        return true;
+    }
+
+    return false;
 }
 
 /**
  * Combines URL linkification and search term highlighting.
  * URLs are made clickable, and search terms are highlighted even within URLs.
+ * Truncated URLs are displayed as plain text (not clickable).
  * 
  * @param text - The text to process
  * @param query - The search term to highlight
@@ -159,14 +188,27 @@ export function linkifyAndHighlight(
 
         URL_REGEX.lastIndex = 0;
         if (URL_REGEX.test(part)) {
-            // This is a URL - make it clickable, with highlighting inside
             URL_REGEX.lastIndex = 0;
 
-            // Clean the URL for href (remove trailing punctuation/ellipsis)
+            // Check if URL is truncated - if so, don't make it clickable
+            if (isTruncatedUrl(part)) {
+                // Render as plain text with highlighting, not as a link
+                const highlighted = query?.trim() ? highlightMatches(part, query) : [part];
+                highlighted.forEach((node, i) => {
+                    if (typeof node === 'string') {
+                        result.push(<React.Fragment key={`truncated-${keyCounter++}`}>{node}</React.Fragment>);
+                    } else {
+                        result.push(React.cloneElement(node as React.ReactElement, { key: `truncated-mark-${keyCounter++}` }));
+                    }
+                });
+                return;
+            }
+
+            // Clean the URL for href (remove trailing punctuation)
             const cleanedUrl = cleanUrl(part);
             const href = cleanedUrl.startsWith('www.') ? `https://${cleanedUrl}` : cleanedUrl;
 
-            // Highlight the query within the URL text (display original with ellipsis if present)
+            // Highlight the query within the URL text
             const highlightedContent = query?.trim()
                 ? highlightMatches(part, query)
                 : [part];
