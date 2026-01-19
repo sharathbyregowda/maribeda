@@ -12,6 +12,7 @@ export interface SnippetResult {
 /**
  * Extracts a contextual snippet around the first match of a query in content.
  * Returns the snippet with surrounding context and total match count.
+ * URLs within the snippet are preserved in full (not truncated).
  * 
  * @param content - The full text content to search in
  * @param query - The search term to find
@@ -47,26 +48,50 @@ export function extractSnippet(
         searchPos = pos + 1;
     }
 
-    // Calculate snippet boundaries
-    const start = Math.max(0, matchIndex - contextChars);
-    const end = Math.min(content.length, matchIndex + lowerQuery.length + contextChars);
+    // Calculate initial snippet boundaries
+    let start = Math.max(0, matchIndex - contextChars);
+    let end = Math.min(content.length, matchIndex + lowerQuery.length + contextChars);
 
-    // Extract snippet
+    // URL regex to find URLs in content
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+
+    // Find all URLs in the content and extend boundaries to include full URLs
+    let match;
+    while ((match = urlRegex.exec(content)) !== null) {
+        const urlStart = match.index;
+        const urlEnd = match.index + match[0].length;
+
+        // If URL overlaps with our snippet boundaries, extend to include full URL
+        if (urlStart < end && urlEnd > start) {
+            // URL is partially or fully in our snippet
+            if (urlStart < start) {
+                // URL starts before snippet - extend start to include it
+                start = urlStart;
+            }
+            if (urlEnd > end) {
+                // URL ends after snippet - extend end to include it
+                end = urlEnd;
+            }
+        }
+    }
+
+    // Extract snippet with extended boundaries
     let snippet = content.substring(start, end);
 
-    // Add ellipses if truncated
+    // Add ellipses if truncated (but only if we didn't extend to include a URL)
     if (start > 0) {
-        // Find a word boundary to start from
+        // Find a word boundary to start from (but not if it would cut a URL)
         const spaceIndex = snippet.indexOf(' ');
-        if (spaceIndex > 0 && spaceIndex < 15) {
+        if (spaceIndex > 0 && spaceIndex < 15 && !snippet.substring(0, spaceIndex).includes('://')) {
             snippet = snippet.substring(spaceIndex + 1);
         }
         snippet = '...' + snippet;
     }
     if (end < content.length) {
-        // Find a word boundary to end at
+        // Find a word boundary to end at (but not if it would cut a URL)
         const lastSpaceIndex = snippet.lastIndexOf(' ');
-        if (lastSpaceIndex > snippet.length - 15 && lastSpaceIndex > 0) {
+        const potentialCut = snippet.substring(lastSpaceIndex);
+        if (lastSpaceIndex > snippet.length - 15 && lastSpaceIndex > 0 && !potentialCut.includes('://')) {
             snippet = snippet.substring(0, lastSpaceIndex);
         }
         snippet = snippet + '...';
@@ -136,37 +161,8 @@ function cleanUrl(url: string): string {
 }
 
 /**
- * Check if a URL appears to be truncated (incomplete)
- */
-function isTruncatedUrl(url: string): boolean {
-    // If it ends with ellipsis, it's truncated
-    if (url.endsWith('...') || url.endsWith('..')) {
-        return true;
-    }
-
-    // Check if the path appears incomplete (very short after domain, or ends abruptly)
-    const cleaned = cleanUrl(url);
-    try {
-        const urlObj = new URL(cleaned.startsWith('www.') ? `https://${cleaned}` : cleaned);
-        const path = urlObj.pathname + urlObj.search + urlObj.hash;
-
-        // If path is just a single character or ends in middle of a segment, likely truncated
-        // e.g., /s or /sport/f (incomplete paths)
-        if (path.length > 1 && path.length < 4 && !path.endsWith('/')) {
-            return true;
-        }
-    } catch {
-        // Invalid URL, treat as truncated
-        return true;
-    }
-
-    return false;
-}
-
-/**
  * Combines URL linkification and search term highlighting.
  * URLs are made clickable, and search terms are highlighted even within URLs.
- * Truncated URLs are displayed as plain text (not clickable).
  * 
  * @param text - The text to process
  * @param query - The search term to highlight
@@ -189,20 +185,6 @@ export function linkifyAndHighlight(
         URL_REGEX.lastIndex = 0;
         if (URL_REGEX.test(part)) {
             URL_REGEX.lastIndex = 0;
-
-            // Check if URL is truncated - if so, don't make it clickable
-            if (isTruncatedUrl(part)) {
-                // Render as plain text with highlighting, not as a link
-                const highlighted = query?.trim() ? highlightMatches(part, query) : [part];
-                highlighted.forEach((node, i) => {
-                    if (typeof node === 'string') {
-                        result.push(<React.Fragment key={`truncated-${keyCounter++}`}>{node}</React.Fragment>);
-                    } else {
-                        result.push(React.cloneElement(node as React.ReactElement, { key: `truncated-mark-${keyCounter++}` }));
-                    }
-                });
-                return;
-            }
 
             // Clean the URL for href (remove trailing punctuation)
             const cleanedUrl = cleanUrl(part);
