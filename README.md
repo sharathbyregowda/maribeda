@@ -98,6 +98,7 @@ Maribeda uses a **best-of-breed hybrid approach** that separates concerns for ma
 - 🔗 **URL Detection** - Automatically linkifies URLs in your notes
 - 📲 **PWA Ready** - Install as app, open `.sqlite` files directly
 - 🏠 **Smart Install Prompt** - Beautiful branded banner, not the ugly browser default
+- 📤 **Web Share Target** - Share links from any app directly to Maribeda (Android)
 
 ---
 

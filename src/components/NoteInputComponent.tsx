@@ -6,9 +6,11 @@ interface NoteInputProps {
     onSave: (input: NoteInput) => void;
     editingNote?: Note | null;
     onCancelEdit?: () => void;
+    sharedContent?: string | null;
+    onSharedContentConsumed?: () => void;
 }
 
-export function NoteInputComponent({ onSave, editingNote, onCancelEdit }: NoteInputProps) {
+export function NoteInputComponent({ onSave, editingNote, onCancelEdit, sharedContent, onSharedContentConsumed }: NoteInputProps) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -22,6 +24,15 @@ export function NoteInputComponent({ onSave, editingNote, onCancelEdit }: NoteIn
             contentRef.current?.focus();
         }
     }, [editingNote]);
+
+    // Handle shared content from Web Share Target
+    useEffect(() => {
+        if (sharedContent) {
+            setContent(prev => prev ? `${prev}\n\n${sharedContent}` : sharedContent);
+            contentRef.current?.focus();
+            onSharedContentConsumed?.();
+        }
+    }, [sharedContent, onSharedContentConsumed]);
 
     const handleSave = () => {
         if (!content.trim()) return;

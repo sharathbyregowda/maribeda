@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { useNotes } from './hooks/useNotes'
 import { useSearch } from './hooks/useSearch'
@@ -18,11 +18,39 @@ function App() {
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
   const [isScrolled, setIsScrolled] = useState(false)
+  const [sharedContent, setSharedContent] = useState<string | null>(null)
   const [theme, setTheme] = useState(() =>
     typeof document !== 'undefined'
       ? document.documentElement.getAttribute('data-theme') || 'light'
       : 'light'
   )
+
+  // Handle Web Share Target - extract shared content from URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const title = params.get('title')
+    const text = params.get('text')
+    const url = params.get('url')
+
+    // Build shared content from available params
+    const parts: string[] = []
+    if (title) parts.push(title)
+    if (text) parts.push(text)
+    if (url && !text?.includes(url)) parts.push(url) // Avoid duplicate URL if already in text
+
+    if (parts.length > 0) {
+      setSharedContent(parts.join('\n\n'))
+    }
+  }, [])
+
+  // Clear URL params after shared content is consumed
+  const handleSharedContentConsumed = useCallback(() => {
+    setSharedContent(null)
+    // Clean up URL without reloading
+    if (window.location.search) {
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   // Handle scroll for sticky header
   useEffect(() => {
@@ -170,6 +198,8 @@ function App() {
               onSave={handleSave}
               editingNote={editingNote}
               onCancelEdit={handleCancelEdit}
+              sharedContent={sharedContent}
+              onSharedContentConsumed={handleSharedContentConsumed}
             />
           </section>
         )}
