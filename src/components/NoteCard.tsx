@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Note } from '../types';
 import { linkifyText } from '../utils/urlDetector';
 import { formatRelativeTime, formatFullDate } from '../utils/dateFormatter';
-import { extractSnippet, highlightMatches } from '../utils/snippetExtractor';
+import { extractSnippet, highlightMatches, linkifyAndHighlight } from '../utils/snippetExtractor';
 import './NoteCard.css';
 
 interface NoteCardProps {
@@ -45,7 +45,7 @@ export function NoteCard({ note, onEdit, onDelete, searchQuery }: NoteCardProps)
                     <div className="search-expanded">
                         {note.content.split('\n').map((line, index) => (
                             <p key={index}>
-                                {highlightMatches(line, searchQuery!)}
+                                {linkifyAndHighlight(line, searchQuery!)}
                             </p>
                         ))}
                         <button
@@ -61,7 +61,7 @@ export function NoteCard({ note, onEdit, onDelete, searchQuery }: NoteCardProps)
             // Snippet mode: show contextual snippet
             return (
                 <div className="search-snippet">
-                    <p>{highlightMatches(snippetResult.snippet, searchQuery!)}</p>
+                    <p>{linkifyAndHighlight(snippetResult.snippet, searchQuery!)}</p>
                     {snippetResult.matchCount > 1 && (
                         <button
                             className="match-count-badge"

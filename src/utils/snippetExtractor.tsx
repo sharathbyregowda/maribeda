@@ -124,3 +124,70 @@ export function highlightMatches(
 
     return parts.length > 0 ? parts : [text];
 }
+
+const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+
+/**
+ * Combines URL linkification and search term highlighting.
+ * URLs are made clickable, and search terms are highlighted even within URLs.
+ * 
+ * @param text - The text to process
+ * @param query - The search term to highlight
+ * @returns Array of React nodes with links and highlights
+ */
+export function linkifyAndHighlight(
+    text: string,
+    query: string
+): React.ReactNode[] {
+    if (!text) return [];
+
+    // First, split by URLs
+    const urlParts = text.split(URL_REGEX);
+    const result: React.ReactNode[] = [];
+    let keyCounter = 0;
+
+    urlParts.forEach((part, index) => {
+        if (!part) return;
+
+        URL_REGEX.lastIndex = 0;
+        if (URL_REGEX.test(part)) {
+            // This is a URL - make it clickable, with highlighting inside
+            URL_REGEX.lastIndex = 0;
+            const href = part.startsWith('www.') ? `https://${part}` : part;
+
+            // Highlight the query within the URL text
+            const highlightedContent = query?.trim()
+                ? highlightMatches(part, query)
+                : [part];
+
+            result.push(
+                <a
+                    key={`url-${keyCounter++}`}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="note-link"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {highlightedContent}
+                </a>
+            );
+        } else {
+            // Regular text - just highlight matches
+            if (query?.trim()) {
+                const highlighted = highlightMatches(part, query);
+                highlighted.forEach((node, i) => {
+                    if (typeof node === 'string') {
+                        result.push(<React.Fragment key={`text-${keyCounter++}`}>{node}</React.Fragment>);
+                    } else {
+                        result.push(React.cloneElement(node as React.ReactElement, { key: `mark-${keyCounter++}` }));
+                    }
+                });
+            } else {
+                result.push(<React.Fragment key={`text-${keyCounter++}`}>{part}</React.Fragment>);
+            }
+        }
+    });
+
+    return result;
+}
