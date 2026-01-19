@@ -128,6 +128,14 @@ export function highlightMatches(
 const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
 
 /**
+ * Clean a URL by removing trailing punctuation that may have been captured
+ */
+function cleanUrl(url: string): string {
+    // Remove trailing ellipsis, periods, commas, etc. that may be captured from snippets
+    return url.replace(/[.,;:!?)]+$/, '').replace(/\.{2,}$/, '');
+}
+
+/**
  * Combines URL linkification and search term highlighting.
  * URLs are made clickable, and search terms are highlighted even within URLs.
  * 
@@ -153,9 +161,12 @@ export function linkifyAndHighlight(
         if (URL_REGEX.test(part)) {
             // This is a URL - make it clickable, with highlighting inside
             URL_REGEX.lastIndex = 0;
-            const href = part.startsWith('www.') ? `https://${part}` : part;
 
-            // Highlight the query within the URL text
+            // Clean the URL for href (remove trailing punctuation/ellipsis)
+            const cleanedUrl = cleanUrl(part);
+            const href = cleanedUrl.startsWith('www.') ? `https://${cleanedUrl}` : cleanedUrl;
+
+            // Highlight the query within the URL text (display original with ellipsis if present)
             const highlightedContent = query?.trim()
                 ? highlightMatches(part, query)
                 : [part];
