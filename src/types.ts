@@ -3,6 +3,7 @@ export interface Note {
   title: string | null;
   content: string;
   isPinned: boolean;
+  lastViewedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

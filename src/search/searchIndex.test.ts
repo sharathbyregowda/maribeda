@@ -15,6 +15,7 @@ const mockNotes: Note[] = [
         title: 'JavaScript Basics',
         content: 'JavaScript is a versatile scripting language.',
         isPinned: false,
+        lastViewedAt: null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -23,6 +24,7 @@ const mockNotes: Note[] = [
         title: 'Python for Data Science',
         content: 'Python is great for machine learning and data analysis.',
         isPinned: false,
+        lastViewedAt: null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     },
@@ -31,6 +33,7 @@ const mockNotes: Note[] = [
         title: 'React Components',
         content: 'React makes building user interfaces easy with components.',
         isPinned: false,
+        lastViewedAt: null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     }

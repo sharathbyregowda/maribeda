@@ -37,13 +37,14 @@ export async function initDatabase(): Promise<Database> {
  * Note: Search is handled by FlexSearch, not SQLite FTS
  */
 function createSchema(database: Database): void {
-    // Notes table with title, content, timestamps, and pin status
+    // Notes table with title, content, timestamps, pin status, and last viewed timestamp
     database.run(`
     CREATE TABLE IF NOT EXISTS notes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT,
       content TEXT NOT NULL,
       isPinned INTEGER DEFAULT 0,
+      lastViewedAt TEXT,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL
     )
@@ -56,9 +57,17 @@ function createSchema(database: Database): void {
         // Column already exists, ignore
     }
 
+    // Migration: Add lastViewedAt column if it doesn't exist (for Rediscover feature)
+    try {
+        database.run(`ALTER TABLE notes ADD COLUMN lastViewedAt TEXT`);
+    } catch {
+        // Column already exists, ignore
+    }
+
     // Create indexes for faster standard access
     database.run(`CREATE INDEX IF NOT EXISTS idx_notes_createdAt ON notes(createdAt DESC)`);
     database.run(`CREATE INDEX IF NOT EXISTS idx_notes_isPinned ON notes(isPinned DESC)`);
+    database.run(`CREATE INDEX IF NOT EXISTS idx_notes_lastViewedAt ON notes(lastViewedAt ASC)`);
 }
 
 /**
@@ -93,6 +102,7 @@ export function addNote(input: NoteInput): Note {
         title: input.title || null,
         content: input.content,
         isPinned: false,
+        lastViewedAt: null,
         createdAt: now,
         updatedAt: now,
     };
@@ -110,7 +120,7 @@ export function updateNote(id: number, input: NoteInput): Note | null {
         [input.title || null, input.content, now, id]
     );
 
-    const result = database.exec('SELECT id, title, content, isPinned, createdAt, updatedAt FROM notes WHERE id = ?', [id]);
+    const result = database.exec('SELECT id, title, content, isPinned, lastViewedAt, createdAt, updatedAt FROM notes WHERE id = ?', [id]);
 
     if (result.length === 0 || result[0].values.length === 0) {
         return null;
@@ -124,8 +134,9 @@ export function updateNote(id: number, input: NoteInput): Note | null {
         title: row[1] as string | null,
         content: row[2] as string,
         isPinned: Boolean(row[3]),
-        createdAt: row[4] as string,
-        updatedAt: row[5] as string,
+        lastViewedAt: row[4] as string | null,
+        createdAt: row[5] as string,
+        updatedAt: row[6] as string,
     };
 }
 
@@ -144,8 +155,8 @@ export function deleteNote(id: number): boolean {
  */
 export function getAllNotes(): Note[] {
     const database = getDatabase();
-    // Use explicit column list to handle migration where isPinned may be added at different positions
-    const result = database.exec('SELECT id, title, content, isPinned, createdAt, updatedAt FROM notes ORDER BY isPinned DESC, createdAt DESC');
+    // Use explicit column list to handle migration where columns may be added at different positions
+    const result = database.exec('SELECT id, title, content, isPinned, lastViewedAt, createdAt, updatedAt FROM notes ORDER BY isPinned DESC, createdAt DESC');
 
     if (result.length === 0) return [];
 
@@ -154,8 +165,9 @@ export function getAllNotes(): Note[] {
         title: row[1] as string | null,
         content: row[2] as string,
         isPinned: Boolean(row[3]),
-        createdAt: row[4] as string,
-        updatedAt: row[5] as string,
+        lastViewedAt: row[4] as string | null,
+        createdAt: row[5] as string,
+        updatedAt: row[6] as string,
     }));
 }
 
@@ -176,7 +188,7 @@ export function toggleNotePin(id: number): Note | null {
 
     database.run('UPDATE notes SET isPinned = ? WHERE id = ?', [newPinned, id]);
 
-    const result = database.exec('SELECT id, title, content, isPinned, createdAt, updatedAt FROM notes WHERE id = ?', [id]);
+    const result = database.exec('SELECT id, title, content, isPinned, lastViewedAt, createdAt, updatedAt FROM notes WHERE id = ?', [id]);
     if (result.length === 0 || result[0].values.length === 0) {
         return null;
     }
@@ -189,8 +201,9 @@ export function toggleNotePin(id: number): Note | null {
         title: row[1] as string | null,
         content: row[2] as string,
         isPinned: Boolean(row[3]),
-        createdAt: row[4] as string,
-        updatedAt: row[5] as string,
+        lastViewedAt: row[4] as string | null,
+        createdAt: row[5] as string,
+        updatedAt: row[6] as string,
     };
 }
 
@@ -229,8 +242,9 @@ export function searchNotes(query: string): Note[] {
             title: row[1] as string | null,
             content: row[2] as string,
             isPinned: Boolean(row[3]),
-            createdAt: row[4] as string,
-            updatedAt: row[5] as string,
+            lastViewedAt: row[4] as string | null,
+            createdAt: row[5] as string,
+            updatedAt: row[6] as string,
         }));
     } catch (e) {
         console.warn("FTS search failed, falling back to LIKE:", e);
@@ -249,10 +263,63 @@ export function searchNotes(query: string): Note[] {
             title: row[1] as string | null,
             content: row[2] as string,
             isPinned: Boolean(row[3]),
-            createdAt: row[4] as string,
-            updatedAt: row[5] as string,
+            lastViewedAt: row[4] as string | null,
+            createdAt: row[5] as string,
+            updatedAt: row[6] as string,
         }));
     }
+}
+
+/**
+ * Get a random "old" note for rediscovery (Serendipity Mode)
+ * Uses time-weighted selection: prioritizes notes not viewed recently and created >7 days ago
+ * @param minAgeDays - Minimum age of notes to consider (default: 7 days)
+ * @returns A random old note, or null if no qualifying notes exist
+ */
+export function getRandomOldNote(minAgeDays: number = 7): Note | null {
+    const database = getDatabase();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - minAgeDays);
+    const cutoffISO = cutoffDate.toISOString();
+
+    // Time-weighted selection: prefer notes with older/null lastViewedAt
+    // Falls back to random if all notes have been viewed recently
+    const result = database.exec(`
+        SELECT id, title, content, isPinned, lastViewedAt, createdAt, updatedAt 
+        FROM notes 
+        WHERE createdAt < ?
+        ORDER BY 
+            CASE WHEN lastViewedAt IS NULL THEN 0 ELSE 1 END,
+            lastViewedAt ASC,
+            RANDOM()
+        LIMIT 1
+    `, [cutoffISO]);
+
+    if (result.length === 0 || result[0].values.length === 0) {
+        return null;
+    }
+
+    const row = result[0].values[0];
+    return {
+        id: row[0] as number,
+        title: row[1] as string | null,
+        content: row[2] as string,
+        isPinned: Boolean(row[3]),
+        lastViewedAt: row[4] as string | null,
+        createdAt: row[5] as string,
+        updatedAt: row[6] as string,
+    };
+}
+
+/**
+ * Mark a note as viewed (update lastViewedAt timestamp)
+ * Used to prevent the same note from appearing repeatedly in Rediscover
+ */
+export function markNoteAsViewed(id: number): void {
+    const database = getDatabase();
+    const now = new Date().toISOString();
+    database.run('UPDATE notes SET lastViewedAt = ? WHERE id = ?', [now, id]);
+    persistToIndexedDB();
 }
 
 /**

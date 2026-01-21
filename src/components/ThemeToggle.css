@@ -1,7 +1,5 @@
 .theme-toggle {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
+    position: relative;
     z-index: 200;
     width: 44px;
     height: 44px;
@@ -34,13 +32,10 @@
     transform: rotate(15deg);
 }
 
-/* Mobile adjustments */
 @media (max-width: 480px) {
     .theme-toggle {
         width: 40px;
         height: 40px;
-        top: 0.75rem;
-        right: 0.75rem;
     }
 
     .theme-toggle svg {

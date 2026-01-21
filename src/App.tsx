@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { useNotes } from './hooks/useNotes'
 import { useSearch } from './hooks/useSearch'
@@ -9,16 +9,18 @@ import { BackupRestore } from './components/BackupRestore'
 import { InstallPrompt } from './components/InstallPrompt'
 import { ThemeToggle } from './components/ThemeToggle'
 import { FloatingAddButton } from './components/FloatingAddButton'
+import { RediscoverButton } from './components/RediscoverButton'
 import { Note, NoteInput } from './types'
 import './App.css'
 
 function App() {
-  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, search, restoreFromBackup, isReady } = useNotes()
+  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, search, restoreFromBackup, isReady } = useNotes()
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
   const [isScrolled, setIsScrolled] = useState(false)
   const [sharedContent, setSharedContent] = useState<string | null>(null)
+  const [rediscoveredNoteId, setRediscoveredNoteId] = useState<number | null>(null)
   const [theme, setTheme] = useState(() =>
     typeof document !== 'undefined'
       ? document.documentElement.getAttribute('data-theme') || 'light'
@@ -150,6 +152,42 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const handleRediscover = () => {
+    // Clear any existing highlight first
+    setRediscoveredNoteId(null)
+
+    // Get a random old note (older than 7 days)
+    const note = rediscoverNote(7)
+
+    if (!note) {
+      // Try with a shorter time frame if no old notes
+      const recentNote = rediscoverNote(1)
+      if (!recentNote) {
+        alert('No notes to rediscover yet. Add more notes and check back later!')
+        return
+      }
+      setRediscoveredNoteId(recentNote.id)
+    } else {
+      setRediscoveredNoteId(note.id)
+    }
+
+    // Mark as viewed after 3 seconds (so it doesn't repeat immediately)
+    const noteId = note?.id ?? rediscoverNote(1)?.id
+    if (noteId) {
+      setTimeout(() => {
+        markAsViewed(noteId)
+      }, 3000)
+    }
+
+    // Scroll to the note after a short delay (let React re-render first)
+    setTimeout(() => {
+      const noteElement = document.querySelector(`[data-note-id="${rediscoveredNoteId ?? noteId}"]`)
+      if (noteElement) {
+        noteElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 100)
+  }
+
   if (isLoading || !isSearchReady) {
     return (
       <div className="app-loading">
@@ -171,7 +209,10 @@ function App() {
 
   return (
     <div className="app">
-      <ThemeToggle />
+      <div className="header-controls">
+        <RediscoverButton onClick={handleRediscover} disabled={!isReady || notes.length === 0} />
+        <ThemeToggle />
+      </div>
       <header className={`app-header ${isScrolled || editingNote ? 'scrolled' : ''}`}>
         <div className="app-logo">
           <img
@@ -217,6 +258,7 @@ function App() {
             onTogglePin={togglePin}
             isSearching={isSearching}
             searchQuery={debouncedQuery}
+            rediscoveredNoteId={rediscoveredNoteId}
           />
         </section>
 

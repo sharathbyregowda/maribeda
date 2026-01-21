@@ -24,6 +24,7 @@ describe('NoteInputComponent UI', () => {
             title: 'Test Note',
             content: 'Test content',
             isPinned: false,
+            lastViewedAt: null,
             createdAt: '2023-01-01',
             updatedAt: '2023-01-01'
         };

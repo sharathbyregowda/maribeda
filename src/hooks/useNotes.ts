@@ -7,6 +7,8 @@ import {
     updateNote as dbUpdateNote,
     deleteNote as dbDeleteNote,
     toggleNotePin as dbToggleNotePin,
+    getRandomOldNote as dbGetRandomOldNote,
+    markNoteAsViewed as dbMarkNoteAsViewed,
     clearAllNotes,
     importNotesFromJson,
 } from '../db/database';
@@ -131,6 +133,18 @@ export function useNotes() {
         return count;
     }, [db]);
 
+    // Rediscover feature: get a random old note
+    const rediscoverNote = useCallback((minAgeDays: number = 7) => {
+        if (!db) return null;
+        return dbGetRandomOldNote(minAgeDays);
+    }, [db]);
+
+    // Mark a note as viewed (for Rediscover feature)
+    const markAsViewed = useCallback((id: number) => {
+        if (!db) return;
+        dbMarkNoteAsViewed(id);
+    }, [db]);
+
     return {
         notes,
         isLoading,
@@ -140,6 +154,8 @@ export function useNotes() {
         updateNote,
         deleteNote: deleteNoteById,
         togglePin,
+        rediscoverNote,
+        markAsViewed,
         search,
         refreshNotes,
         restoreFromBackup,

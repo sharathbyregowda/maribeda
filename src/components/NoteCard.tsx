@@ -11,9 +11,10 @@ interface NoteCardProps {
     onDelete: (id: number) => void;
     onTogglePin: (id: number) => void;
     searchQuery?: string;
+    isRediscovered?: boolean;
 }
 
-export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isRediscovered }: NoteCardProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -85,7 +86,7 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery }: N
     };
 
     return (
-        <div className={`note-card ${note.isPinned ? 'is-pinned' : ''}`}>
+        <div className={`note-card ${note.isPinned ? 'is-pinned' : ''} ${isRediscovered ? 'rediscovered' : ''}`}>
             <div className="note-card-header">
                 <div className="note-card-title-row">
                     {note.title && <h3 className="note-card-title">{highlightMatches(note.title, searchQuery || '')}</h3>}

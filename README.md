@@ -97,6 +97,7 @@ Maribeda uses a **best-of-breed hybrid approach** that separates concerns for ma
 - 💾 **Magic Share** - Transfer your diary via AirDrop, Nearby Share, or direct download
 - 🔗 **URL Detection** - Automatically linkifies URLs in your notes
 - 📌 **Pin to Top** - Keep important notes pinned at the top of your list
+- 🎲 **Rediscover** - Serendipity mode surfaces forgotten notes with a single tap
 - 📲 **PWA Ready** - Install as app, open `.sqlite` files directly
 - 🏠 **Smart Install Prompt** - Beautiful branded banner, not the ugly browser default
 - 📤 **Web Share Target** - Share links from any app directly to Maribeda (Android)

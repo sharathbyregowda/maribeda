@@ -10,9 +10,10 @@ interface NoteListProps {
     onTogglePin: (id: number) => void;
     isSearching?: boolean;
     searchQuery?: string;
+    rediscoveredNoteId?: number | null;
 }
 
-export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, searchQuery }: NoteListProps) {
+export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, searchQuery, rediscoveredNoteId }: NoteListProps) {
     if (notes.length === 0) {
         return (
             <div className="note-list-empty">
@@ -65,14 +66,16 @@ export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, se
     return (
         <div className="note-list">
             {notes.map((note) => (
-                <NoteCard
-                    key={note.id}
-                    note={note}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onTogglePin={onTogglePin}
-                    searchQuery={searchQuery}
-                />
+                <div key={note.id} data-note-id={note.id}>
+                    <NoteCard
+                        note={note}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onTogglePin={onTogglePin}
+                        searchQuery={searchQuery}
+                        isRediscovered={rediscoveredNoteId === note.id}
+                    />
+                </div>
             ))}
         </div>
     );
