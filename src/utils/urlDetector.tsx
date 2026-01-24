@@ -46,3 +46,16 @@ export function extractUrls(text: string): string[] {
     URL_REGEX.lastIndex = 0;
     return text.match(URL_REGEX) || [];
 }
+
+/**
+ * Extract domain from a URL (e.g., "youtube.com" from "https://www.youtube.com/watch?v=abc")
+ */
+export function getDomain(url: string): string | null {
+    try {
+        const normalized = url.startsWith('www.') ? `https://${url}` : url;
+        const parsed = new URL(normalized);
+        return parsed.hostname.replace(/^www\./, '');
+    } catch {
+        return null;
+    }
+}

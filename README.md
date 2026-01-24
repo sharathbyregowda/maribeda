@@ -1,43 +1,102 @@
-# Maribeda
+# 📝 Maribeda (ಮರಿಬೇಡ)
 
 ![Maribeda Logo](assets/maribeda-logo.jpeg)
 
-**Don't forget a thing.**
+**Your Private Watchlist & Second Brain.**
 
-A local-first, lightning-fast diary that runs entirely in your browser. Zero servers, zero tracking, zero compromises.
+Maribeda (Kannada for "Don't forget") is a local-first vault where you capture your thoughts and curate your favorite internet content—without the algorithms.
+
+- **Remember everything** — A lightning-fast diary that finds your notes even when you make typos.
+- **Private Watchlist** — Save videos and articles from Instagram/YouTube without training the recommendation engine.
+- **100% Ownership** — Your data lives on your device. No login, no cloud, no tracking.
 
 ---
 
-## ✨ What Makes Maribeda Special
+## 🛡️ Why Maribeda?
 
-### 🔒 **Privacy First**
-- **No accounts required** - Start writing immediately
-- **No cloud sync** - Your thoughts stay on your device
-- **No tracking** - We don't even know you exist
-- **100% offline** - Works without internet after first load
+We live in a digital trade-off. To remember something, we usually have to give it away to a server. To save a video, we have to "Like" it and train an algorithm.
 
-### ⚡ **Blazing Fast Search**
-Powered by our **hybrid architecture**:
-- **SQLite WASM** for rock-solid local storage
-- **FlexSearch** for instant, intelligent search
-- **Typo tolerance** - "programing" finds "programming"
-- **Fuzzy matching** - Search smarter, not harder
-- **Sub-50ms indexing** - Even with thousands of notes
-- **Contextual snippets** - See matching text in context, not card beginnings
-- **Highlighted matches** - Instantly spot what you're looking for
-- **Expand to see all** - Click "+N more" to view all matches in a card
+**Maribeda breaks the trade-off.**
 
-### 💾 **Your Data, Your Control**
-- **Magic Share Button** - AirDrop/Nearby Share on mobile, download on desktop
-- **SQLite Binary Export** - Full database backup in one file
-- **Legacy JSON Support** - Still accepts old JSON backups
-- **Open with Maribeda** - PWA file handling for `.sqlite` files
+| The Problem | Our Solution |
+|-------------|--------------|
+| 🧠 **Forgetting things** | FlexSearch finds `programing` even if you typed `programming` |
+| 📡 **Feeding algorithms** | Save that viral Reel privately — it goes to your device, not their servers |
+| 🔒 **Losing control** | No tracking. No profiling. No sync. Just your notes on your device. |
+
+---
+
+## ⚡ Magic Features
+
+### 🎲 Rediscover (Serendipity Mode)
+
+Search is for when you know what you want. **Rediscover is for when you don't.**
+
+```
+The Feature:  Tap the "🎲 Rediscover" button
+The Result:   We surface a random note from months ago that you completely forgot
+The Value:    "Oh wow! I forgot I saved this."
+```
+
+It turns your diary into a **discovery engine**.
+
+---
+
+### ✈️ Magic Share (Zero Cloud Transfer)
+
+Move your life between devices effortlessly.
+
+```
+The Feature:  Click "Backup / Transfer"
+The Magic:    On mobile → AirDrop or Nearby Share
+              On desktop → Downloads a .sqlite file
+The Tech:     Your database wrapped in a lightweight export. No server.
+```
+
+---
+
+### 💡 See Also (Auto-Association)
+
+Your brain connects ideas. **Maribeda does too.**
+
+```
+The Feature:  Open a note about "Leg Day" (Fitness)
+The Result:   Maribeda surfaces a "Protein Shake" recipe 
+              and a "Stoic Resilience" podcast you saved
+The Value:    Accidental connections — no manual tagging required
+```
+
+**Works for URL-only notes too.** Saved 10 YouTube links with no titles? Open one, and we'll show you the others.
+
+---
+
+### 🔍 Typos? No Problem.
+
+Our FlexSearch engine understands context, not just syntax.
+
+| You typed | We found |
+|-----------|----------|
+| `programing` | programming |
+| `pointrs` | pointers |
+| `reciepe` | recipe |
+
+We read your **intent**, not just your keystrokes.
+
+---
+
+## 📌 More Features
+
+| Feature | Description |
+|---------|-------------|
+| **Pin to Top** | Keep important notes always visible |
+| **Dark Mode** | Easy on the eyes, day or night |
+| **URL Detection** | Links become clickable automatically |
+| **PWA Ready** | Install as an app, works offline |
+| **Web Share Target** | Share from any app directly to Maribeda (Android) |
 
 ---
 
 ## 🏗️ Architecture
-
-Maribeda uses a **best-of-breed hybrid approach** that separates concerns for maximum performance:
 
 ```
 ┌─────────────────┐  ┌──────────────────┐
@@ -46,132 +105,65 @@ Maribeda uses a **best-of-breed hybrid approach** that separates concerns for ma
 │                 │  │                  │
 │ • Transactions  │  │ • Fuzzy Search   │
 │ • ACID          │  │ • Typo Tolerance │
-│ • Persistence   │  │ • Prefix Match   │
-│ • Backup/Restore│  │ • Ranking        │
+│ • Persistence   │  │ • Ranking        │
 └─────────────────┘  └──────────────────┘
          ↓                    ↓
-    ┌────────────────────────────┐
-    │      IndexedDB Cache       │
-    │   (Browser Persistence)    │
-    └────────────────────────────┘
+    ┌────────────────────────────────┐
+    │      IndexedDB Cache           │
+    │   (Browser Persistence)        │
+    └────────────────────────────────┘
 ```
 
-### Why This Architecture?
-
-**Traditional Approach** (Single Database):
-- ❌ Slow full-text search
-- ❌ Limited search features
-- ❌ Vendor lock-in to one library
-
-**Maribeda's Hybrid Approach**:
-- ✅ **SQLite** does what it's best at: reliable storage
-- ✅ **FlexSearch** does what it's best at: lightning-fast search
-- ✅ Best-in-class for each concern
-- ✅ Easy to upgrade/swap components independently
-- ✅ Smaller bundle size (16KB vs 150KB for alternatives)
+**Zero servers. Zero tracking. Zero compromises.**
 
 ---
 
 ## 🚀 Tech Stack
 
-| Layer | Technology | Why? |
-|-------|-----------|------|
-| **Storage** | SQLite WASM | Battle-tested, ACID-compliant, portable |
-| **Search** | FlexSearch | Fastest JS search library, typo-tolerant |
-| **Persistence** | IndexedDB | Browser-native, reliable, async |
-| **Frontend** | React + TypeScript | Type-safe, component-based |
-| **Styling** | CSS Variables | Fast, maintainable, no build overhead |
-| **Build** | Vite | Lightning-fast HMR, optimized production builds |
-| **Analytics** | Vercel Analytics | Privacy-friendly, zero PII collection |
-
----
-
-## 🎯 Features
-
-- ✍️ **Rich Text Support** - Write naturally with markdown-like formatting
-- 🔍 **Intelligent Search** - Find notes instantly with fuzzy matching
-- 📅 **Timestamps** - Automatic creation and update tracking
-- 🎨 **Clean UI** - Distraction-free writing experience
-- 📱 **Responsive** - Works beautifully on desktop and mobile
-- 🌙 **Dark Mode Ready** - Easy on the eyes, day or night
-- 💾 **Magic Share** - Transfer your diary via AirDrop, Nearby Share, or direct download
-- 🔗 **URL Detection** - Automatically linkifies URLs in your notes
-- 📌 **Pin to Top** - Keep important notes pinned at the top of your list
-- 🎲 **Rediscover** - Serendipity mode surfaces forgotten notes with a single tap
-- 📲 **PWA Ready** - Install as app, open `.sqlite` files directly
-- 🏠 **Smart Install Prompt** - Beautiful branded banner, not the ugly browser default
-- 📤 **Web Share Target** - Share links from any app directly to Maribeda (Android)
+| Layer | Technology |
+|-------|------------|
+| **Storage** | SQLite WASM (battle-tested, portable) |
+| **Search** | FlexSearch (fastest JS search, typo-tolerant) |
+| **Persistence** | IndexedDB (browser-native, async) |
+| **Frontend** | React + TypeScript |
+| **Build** | Vite |
 
 ---
 
 ## 🛠️ Getting Started
 
 ### For Users
-1. Visit [maribeda.vercel.app](https://maribeda.vercel.app) (or your deployment URL)
-2. Start writing - no signup needed!
-3. Your notes are saved automatically to your browser
+1. Visit [maribeda.vercel.app](https://maribeda.vercel.app)
+2. Start capturing — no signup needed
+3. Your notes are stored locally in your browser
 
 ### For Developers
 
 ```bash
-# Clone the repository
 git clone https://github.com/sharathbyregowda/maribeda.git
 cd maribeda
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
-
-# Build for production
-npm run build
 ```
 
 ---
 
 ## 📊 Performance
 
-- **Bundle Size**: 307KB (gzipped: 100KB)
-- **First Load**: <1s on 3G
-- **Search Speed**: <10ms for 1000 notes
-- **Index Build**: <50ms for 1000 notes
+- **Bundle**: ~110KB gzipped
+- **Search**: <10ms for 1000 notes
 - **Offline**: ✅ Full functionality
 
 ---
 
-## 🎓 Learning Resources
+## 🌟 The Vision
 
-This project demonstrates:
-- **Hybrid Architecture** - Combining specialized tools for optimal performance
-- **Local-First Software** - Building apps that work offline-first
-- **WASM Integration** - Using WebAssembly in React apps
-- **IndexedDB Patterns** - Reliable browser-based persistence
-- **TypeScript Best Practices** - Type-safe React development
-- **Modern Build Tools** - Vite for fast development
+Maribeda is your **Second Brain** and **Shadow Library** combined.
+
+A place to capture thoughts, save content, and rediscover ideas — without giving up your privacy.
+
+**Your thoughts. Your saves. Your control.**
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! This project is a great example of:
-- Clean separation of concerns
-- Modern web app architecture
-- Privacy-focused design
-- Performance optimization
-
----
-
-## 📄 License
-
-MIT License - Use it, learn from it, build upon it!
-
----
-
-## 🌟 Why "Maribeda"?
-
-In Kannada, "ಮರೆಬೇಡ" (Maribeda) means "Don't forget" - a perfect name for a diary app that helps you remember everything.
-
----
-
-**Built with ❤️ for privacy, performance, and simplicity.**
+**Built with ❤️ for privacy, performance, and digital freedom.**

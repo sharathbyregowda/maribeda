@@ -14,7 +14,7 @@ import { Note, NoteInput } from './types'
 import './App.css'
 
 function App() {
-  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, search, restoreFromBackup, isReady } = useNotes()
+  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, getRelatedNotes, search, restoreFromBackup, isReady } = useNotes()
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
@@ -259,6 +259,17 @@ function App() {
             isSearching={isSearching}
             searchQuery={debouncedQuery}
             rediscoveredNoteId={rediscoveredNoteId}
+            getRelatedNotes={getRelatedNotes}
+            onRelatedNoteClick={(note) => {
+              // Scroll to the clicked related note
+              const element = document.querySelector(`[data-note-id="${note.id}"]`);
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Briefly highlight with rediscover effect
+                setRediscoveredNoteId(note.id);
+                setTimeout(() => setRediscoveredNoteId(null), 3000);
+              }
+            }}
           />
         </section>
 

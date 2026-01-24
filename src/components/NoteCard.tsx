@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Note } from '../types';
 import { linkifyText } from '../utils/urlDetector';
 import { formatRelativeTime, formatFullDate } from '../utils/dateFormatter';
 import { extractSnippet, highlightMatches, linkifyAndHighlight } from '../utils/snippetExtractor';
+import { SeeAlso } from './SeeAlso';
 import './NoteCard.css';
 
 interface NoteCardProps {
@@ -12,11 +13,28 @@ interface NoteCardProps {
     onTogglePin: (id: number) => void;
     searchQuery?: string;
     isRediscovered?: boolean;
+    getRelatedNotes?: (note: Note) => Promise<Note[]>;
+    onRelatedNoteClick?: (note: Note) => void;
 }
 
-export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isRediscovered }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isRediscovered, getRelatedNotes, onRelatedNoteClick }: NoteCardProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [relatedNotes, setRelatedNotes] = useState<Note[]>([]);
+    const [isLoadingRelated, setIsLoadingRelated] = useState(false);
+
+    // Load related notes when expanded (lazy loading)
+    useEffect(() => {
+        if (isExpanded && getRelatedNotes && relatedNotes.length === 0 && !isLoadingRelated) {
+            setIsLoadingRelated(true);
+            getRelatedNotes(note).then((notes) => {
+                setRelatedNotes(notes);
+                setIsLoadingRelated(false);
+            }).catch(() => {
+                setIsLoadingRelated(false);
+            });
+        }
+    }, [isExpanded, getRelatedNotes, note, relatedNotes.length, isLoadingRelated]);
 
     const handleDeleteClick = () => {
         setShowDeleteConfirm(true);
@@ -187,6 +205,15 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isR
                     </div>
                 )}
             </div>
+
+            {/* See Also section - shown when expanded */}
+            {isExpanded && getRelatedNotes && (
+                <SeeAlso
+                    relatedNotes={relatedNotes}
+                    onNoteClick={onRelatedNoteClick || (() => { })}
+                    isLoading={isLoadingRelated}
+                />
+            )}
         </div>
     );
 }

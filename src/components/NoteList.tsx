@@ -11,9 +11,11 @@ interface NoteListProps {
     isSearching?: boolean;
     searchQuery?: string;
     rediscoveredNoteId?: number | null;
+    getRelatedNotes?: (note: Note) => Promise<Note[]>;
+    onRelatedNoteClick?: (note: Note) => void;
 }
 
-export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, searchQuery, rediscoveredNoteId }: NoteListProps) {
+export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, searchQuery, rediscoveredNoteId, getRelatedNotes, onRelatedNoteClick }: NoteListProps) {
     if (notes.length === 0) {
         return (
             <div className="note-list-empty">
@@ -74,6 +76,8 @@ export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, se
                         onTogglePin={onTogglePin}
                         searchQuery={searchQuery}
                         isRediscovered={rediscoveredNoteId === note.id}
+                        getRelatedNotes={getRelatedNotes}
+                        onRelatedNoteClick={onRelatedNoteClick}
                     />
                 </div>
             ))}

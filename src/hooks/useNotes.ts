@@ -21,6 +21,7 @@ import {
     searchInIndex,
     clearSearchIndex
 } from '../search/searchIndex';
+import { getRelatedNotes as findRelatedNotes } from '../utils/seeAlso';
 import { Note, NoteInput } from '../types';
 
 export function useNotes() {
@@ -145,6 +146,12 @@ export function useNotes() {
         dbMarkNoteAsViewed(id);
     }, [db]);
 
+    // Get related notes for See Also feature
+    const getRelatedNotes = useCallback(async (note: Note, limit: number = 3) => {
+        if (!db) return [];
+        return await findRelatedNotes(note, notes, limit);
+    }, [db, notes]);
+
     return {
         notes,
         isLoading,
@@ -156,6 +163,7 @@ export function useNotes() {
         togglePin,
         rediscoverNote,
         markAsViewed,
+        getRelatedNotes,
         search,
         refreshNotes,
         restoreFromBackup,
