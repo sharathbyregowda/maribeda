@@ -7,7 +7,7 @@
 Maribeda (Kannada for "Don't forget") is a local-first vault where you capture your thoughts and curate your favorite internet content—without the algorithms.
 
 - **Remember everything** — A lightning-fast diary that finds your notes even when you make typos.
-- **Private Watchlist** — Save videos and articles from Instagram/YouTube without training the recommendation engine.
+- **Private Watchlist** — Save videos and articles from Instagram/YouTube/Reddit/etc without training the recommendation engine.
 - **100% Ownership** — Your data lives on your device. No login, no cloud, no tracking.
 
 ---
