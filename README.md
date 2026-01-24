@@ -70,17 +70,18 @@ The Value:    Accidental connections — no manual tagging required
 
 ---
 
-### 🔍 Typos? No Problem.
+### 🔍 Smart Search
 
-Our FlexSearch engine understands context, not just syntax.
+FlexSearch finds what you're looking for — even when you're mid-thought.
 
-| You typed | We found |
-|-----------|----------|
-| `programing` | programming |
-| `pointrs` | pointers |
-| `reciepe` | recipe |
+| You type | We find |
+|----------|---------|
+| `progra` | programming, programs, programmer |
+| `point` | pointers, pointing, powerpoint |
+| `recip` | recipe, recipes, recipient |
+| `JAVASCRIPT` | javascript (case insensitive) |
 
-We read your **intent**, not just your keystrokes.
+Start typing and results appear **instantly** — no need to finish the word.
 
 ---
 
