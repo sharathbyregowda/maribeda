@@ -138,3 +138,37 @@ export function isUrlOnlyNote(text: string): boolean {
     const urls = extractUrls(text);
     return urls.length > 0 && keywords.length < MIN_USEFUL_KEYWORDS;
 }
+
+/**
+ * Find similar note IDs for incoming content (Smart Merge Intent)
+ * Returns IDs in FlexSearch relevance order (first = best match)
+ * 
+ * Pure function: returns only IDs, hook maps to Note objects
+ */
+export async function findSimilarNoteIds(
+    text: string,
+    excludeId?: number,
+    limit: number = 5
+): Promise<number[]> {
+    const keywords = extractKeywords(text);
+
+    if (keywords.length < 1) {
+        // Not enough keywords to search
+        return [];
+    }
+
+    // Build search query from keywords
+    const searchQuery = keywords.slice(0, 5).join(' ');
+
+    try {
+        const matchingIds = await searchInIndex(searchQuery);
+
+        // Filter out excluded ID and limit results
+        return matchingIds
+            .filter(id => id !== excludeId)
+            .slice(0, limit);
+    } catch (error) {
+        console.warn('findSimilarNoteIds search failed:', error);
+        return [];
+    }
+}

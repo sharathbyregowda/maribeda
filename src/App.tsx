@@ -10,11 +10,13 @@ import { InstallPrompt } from './components/InstallPrompt'
 import { ThemeToggle } from './components/ThemeToggle'
 import { FloatingAddButton } from './components/FloatingAddButton'
 import { RediscoverButton } from './components/RediscoverButton'
+import { SmartMergeModal, SmartMergeMode } from './components/SmartMergeModal'
+import { extractUrls } from './utils/urlDetector'
 import { Note, NoteInput } from './types'
 import './App.css'
 
 function App() {
-  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, getRelatedNotes, search, restoreFromBackup, isReady } = useNotes()
+  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, getRelatedNotes, findByUrl, findSimilar, appendToNote, search, restoreFromBackup, isReady } = useNotes()
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
@@ -27,7 +29,15 @@ function App() {
       : 'light'
   )
 
-  // Handle Web Share Target - extract shared content from URL params
+  // Smart Merge Intent modal state
+  const [mergeModal, setMergeModal] = useState<{
+    isOpen: boolean;
+    mode: SmartMergeMode;
+    incomingContent: string;
+    matchedNotes: Note[];
+  } | null>(null)
+
+  // Handle Web Share Target - check for duplicates/similar before creating
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const title = params.get('title')
@@ -38,12 +48,59 @@ function App() {
     const parts: string[] = []
     if (title) parts.push(title)
     if (text) parts.push(text)
-    if (url && !text?.includes(url)) parts.push(url) // Avoid duplicate URL if already in text
+    if (url && !text?.includes(url)) parts.push(url)
 
     if (parts.length > 0) {
-      setSharedContent(parts.join('\n\n'))
+      const content = parts.join('\n\n')
+      checkForMergeIntent(content, url || undefined)
     }
-  }, [])
+  }, [isReady])
+
+  // Check for duplicate URL or similar notes (Smart Merge Intent)
+  const checkForMergeIntent = async (content: string, url?: string) => {
+    if (!isReady) {
+      // Database not ready, just set shared content
+      setSharedContent(content)
+      return
+    }
+
+    // Step 1: Check for exact URL duplicate
+    if (url) {
+      const existingNote = findByUrl(url)
+      if (existingNote) {
+        setMergeModal({
+          isOpen: true,
+          mode: 'duplicate',
+          incomingContent: content,
+          matchedNotes: [existingNote]
+        })
+        // Clean URL params
+        if (window.location.search) {
+          window.history.replaceState({}, '', window.location.pathname)
+        }
+        return
+      }
+    }
+
+    // Step 2: Check for similar notes
+    const similarNotes = await findSimilar(content, 5)
+    if (similarNotes.length > 0) {
+      setMergeModal({
+        isOpen: true,
+        mode: similarNotes.length === 1 ? 'single' : 'multiple',
+        incomingContent: content,
+        matchedNotes: similarNotes
+      })
+      // Clean URL params
+      if (window.location.search) {
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+      return
+    }
+
+    // Step 3: No matches - proceed with normal flow
+    setSharedContent(content)
+  }
 
   // Clear URL params after shared content is consumed
   const handleSharedContentConsumed = useCallback(() => {
@@ -53,6 +110,44 @@ function App() {
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
+
+  // Smart Merge Intent handlers
+  const handleMergeAppend = async (targetNote: Note) => {
+    if (!mergeModal) return
+    await appendToNote(targetNote.id, mergeModal.incomingContent)
+    setMergeModal(null)
+    // Scroll to and highlight the updated note
+    setTimeout(() => {
+      const element = document.querySelector(`[data-note-id="${targetNote.id}"]`)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setRediscoveredNoteId(targetNote.id)
+        setTimeout(() => setRediscoveredNoteId(null), 3000)
+      }
+    }, 100)
+  }
+
+  const handleMergeCreateNew = (content: string) => {
+    setMergeModal(null)
+    setSharedContent(content) // Pass to input form
+  }
+
+  const handleMergeOpenNote = (note: Note) => {
+    setMergeModal(null)
+    // Scroll to and highlight the note
+    setTimeout(() => {
+      const element = document.querySelector(`[data-note-id="${note.id}"]`)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setRediscoveredNoteId(note.id)
+        setTimeout(() => setRediscoveredNoteId(null), 3000)
+      }
+    }, 100)
+  }
+
+  const handleMergeClose = () => {
+    setMergeModal(null)
+  }
 
   // Handle scroll for sticky header
   useEffect(() => {
@@ -286,6 +381,19 @@ function App() {
       </footer>
       <InstallPrompt />
       <Analytics />
+
+      {/* Smart Merge Intent Modal */}
+      {mergeModal && (
+        <SmartMergeModal
+          mode={mergeModal.mode}
+          incomingContent={mergeModal.incomingContent}
+          matchedNotes={mergeModal.matchedNotes}
+          onAppend={handleMergeAppend}
+          onCreateNew={handleMergeCreateNew}
+          onOpenNote={handleMergeOpenNote}
+          onClose={handleMergeClose}
+        />
+      )}
     </div>
   )
 }

@@ -9,6 +9,7 @@ import {
     toggleNotePin as dbToggleNotePin,
     getRandomOldNote as dbGetRandomOldNote,
     markNoteAsViewed as dbMarkNoteAsViewed,
+    findNoteByUrl as dbFindNoteByUrl,
     clearAllNotes,
     importNotesFromJson,
 } from '../db/database';
@@ -21,7 +22,7 @@ import {
     searchInIndex,
     clearSearchIndex
 } from '../search/searchIndex';
-import { getRelatedNotes as findRelatedNotes } from '../utils/seeAlso';
+import { getRelatedNotes as findRelatedNotes, findSimilarNoteIds } from '../utils/seeAlso';
 import { Note, NoteInput } from '../types';
 
 export function useNotes() {
@@ -152,6 +153,35 @@ export function useNotes() {
         return await findRelatedNotes(note, notes, limit);
     }, [db, notes]);
 
+    // Smart Merge Intent: Find note by exact URL (duplicate detection)
+    const findByUrl = useCallback((url: string): Note | null => {
+        if (!db) return null;
+        return dbFindNoteByUrl(url);
+    }, [db]);
+
+    // Smart Merge Intent: Find similar notes (returns Note objects, sorted by relevance)
+    const findSimilar = useCallback(async (text: string, limit: number = 5): Promise<Note[]> => {
+        if (!db) return [];
+        const ids = await findSimilarNoteIds(text, undefined, limit);
+        // Map IDs to Note objects, preserving relevance order
+        return ids
+            .map(id => notes.find(n => n.id === id))
+            .filter((n): n is Note => n !== undefined);
+    }, [db, notes]);
+
+    // Smart Merge Intent: Append content to existing note with visual separator
+    const appendToNote = useCallback(async (noteId: number, content: string): Promise<Note | null> => {
+        const note = notes.find(n => n.id === noteId);
+        if (!note) return null;
+
+        const separator = '\n\n---\n\n';
+        const updatedNote = await updateNote(noteId, {
+            title: note.title || undefined,
+            content: note.content + separator + content
+        });
+        return updatedNote;
+    }, [notes, updateNote]);
+
     return {
         notes,
         isLoading,
@@ -164,6 +194,9 @@ export function useNotes() {
         rediscoverNote,
         markAsViewed,
         getRelatedNotes,
+        findByUrl,
+        findSimilar,
+        appendToNote,
         search,
         refreshNotes,
         restoreFromBackup,

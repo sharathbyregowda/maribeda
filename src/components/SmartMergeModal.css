@@ -1,0 +1,243 @@
+.smart-merge-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.smart-merge-modal {
+    background: var(--color-card);
+    border-radius: 16px;
+    max-width: 420px;
+    width: 100%;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.smart-merge-icon {
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.smart-merge-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-align: center;
+    margin: 0 0 0.25rem 0;
+}
+
+.smart-merge-subtitle {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin: 0 0 1rem 0;
+}
+
+/* Incoming content preview */
+.smart-merge-incoming {
+    background: var(--color-bg);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.incoming-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.incoming-content {
+    font-size: 0.9rem;
+    color: var(--color-text);
+    word-break: break-word;
+}
+
+/* Note preview card */
+.smart-merge-note-preview {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.note-preview-title {
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 0.25rem;
+}
+
+.note-preview-date {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.note-preview-content {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+/* Radio list for multiple matches */
+.smart-merge-radio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.radio-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-item:hover {
+    border-color: var(--color-primary);
+}
+
+.radio-item.selected {
+    border-color: var(--color-primary);
+    background: rgba(94, 189, 214, 0.1);
+}
+
+.radio-item input[type="radio"] {
+    margin-top: 0.25rem;
+    accent-color: var(--color-primary);
+}
+
+.radio-content {
+    flex: 1;
+}
+
+.radio-title {
+    font-weight: 500;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.best-match-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: var(--color-primary);
+    color: white;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+}
+
+.radio-date {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+}
+
+/* Action buttons */
+.smart-merge-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.smart-merge-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.smart-merge-btn.primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.smart-merge-btn.primary:hover {
+    filter: brightness(1.1);
+}
+
+.smart-merge-btn.primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.smart-merge-btn.secondary {
+    background: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+}
+
+.smart-merge-btn.secondary:hover {
+    background: var(--color-card);
+    border-color: var(--color-primary);
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+    .smart-merge-modal {
+        padding: 1.25rem;
+    }
+
+    .smart-merge-title {
+        font-size: 1.1rem;
+    }
+
+    .smart-merge-btn {
+        padding: 0.65rem 0.75rem;
+        font-size: 0.9rem;
+    }
+}

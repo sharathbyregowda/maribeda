@@ -208,6 +208,40 @@ export function toggleNotePin(id: number): Note | null {
 }
 
 /**
+ * Find a note containing an exact URL (for duplicate detection)
+ * Uses LIKE with escaped special characters for safe matching
+ */
+export function findNoteByUrl(url: string): Note | null {
+    const database = getDatabase();
+
+    // Escape SQL LIKE special characters
+    const escaped = url.replace(/%/g, '\\%').replace(/_/g, '\\_');
+
+    const result = database.exec(
+        `SELECT id, title, content, isPinned, lastViewedAt, createdAt, updatedAt 
+         FROM notes 
+         WHERE content LIKE ? ESCAPE '\\'
+         LIMIT 1`,
+        [`%${escaped}%`]
+    );
+
+    if (result.length === 0 || result[0].values.length === 0) {
+        return null;
+    }
+
+    const row = result[0].values[0];
+    return {
+        id: row[0] as number,
+        title: row[1] as string | null,
+        content: row[2] as string,
+        isPinned: Boolean(row[3]),
+        lastViewedAt: row[4] as string | null,
+        createdAt: row[5] as string,
+        updatedAt: row[6] as string,
+    };
+}
+
+/**
  * Search notes using FTS5 (Full-Text Search)
  */
 export function searchNotes(query: string): Note[] {

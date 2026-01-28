@@ -70,6 +70,20 @@ The Value:    Accidental connections — no manual tagging required
 
 ---
 
+### 🔀 Smart Merge (Duplicate Detection)
+
+Never save the same link twice. Maribeda catches duplicates and suggests merging.
+
+```
+You share:    youtube.com/v=abc123
+We detect:    "Already saved in 'Kettlebell Exercises'"
+You choose:   📂 Open Note  OR  📥 Append to it
+```
+
+Also works for **similar content** — if you share something titled "Kettlebell Swings", we'll surface your existing "Kettlebell Exercises" note and ask if you want to merge.
+
+---
+
 ### 🔍 Smart Search
 
 FlexSearch finds what you're looking for — even when you're mid-thought.
