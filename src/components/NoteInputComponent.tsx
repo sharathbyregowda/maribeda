@@ -8,11 +8,13 @@ interface NoteInputProps {
     onCancelEdit?: () => void;
     sharedContent?: string | null;
     onSharedContentConsumed?: () => void;
+    onCheckMergeIntent?: (input: NoteInput) => Promise<boolean>; // Returns true if merge modal shown
 }
 
-export function NoteInputComponent({ onSave, editingNote, onCancelEdit, sharedContent, onSharedContentConsumed }: NoteInputProps) {
+export function NoteInputComponent({ onSave, editingNote, onCancelEdit, sharedContent, onSharedContentConsumed, onCheckMergeIntent }: NoteInputProps) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
+    const [isChecking, setIsChecking] = useState(false);
     const contentRef = useRef<HTMLTextAreaElement>(null);
     const isEditing = !!editingNote;
 
@@ -34,13 +36,26 @@ export function NoteInputComponent({ onSave, editingNote, onCancelEdit, sharedCo
         }
     }, [sharedContent, onSharedContentConsumed]);
 
-    const handleSave = () => {
-        if (!content.trim()) return;
+    const handleSave = async () => {
+        if (!content.trim() || isChecking) return;
 
-        onSave({
+        const input: NoteInput = {
             title: title.trim() || undefined,
             content: content.trim(),
-        });
+        };
+
+        // Check for merge intent if not editing and callback provided
+        if (!isEditing && onCheckMergeIntent) {
+            setIsChecking(true);
+            const showedModal = await onCheckMergeIntent(input);
+            setIsChecking(false);
+            if (showedModal) {
+                // Modal is shown, don't save yet - user will choose
+                return;
+            }
+        }
+
+        onSave(input);
 
         // Clear inputs after save
         setTitle('');

@@ -149,6 +149,43 @@ function App() {
     setMergeModal(null)
   }
 
+  // Smart Merge Intent for manual input (called before save)
+  const handleCheckMergeIntent = async (input: NoteInput): Promise<boolean> => {
+    if (!isReady) return false
+
+    const content = `${input.title || ''} ${input.content}`.trim()
+    const urls = extractUrls(content)
+    const url = urls.length > 0 ? urls[0] : undefined
+
+    // Step 1: Check for exact URL duplicate
+    if (url) {
+      const existingNote = findByUrl(url)
+      if (existingNote) {
+        setMergeModal({
+          isOpen: true,
+          mode: 'duplicate',
+          incomingContent: input.content,
+          matchedNotes: [existingNote]
+        })
+        return true // Modal shown
+      }
+    }
+
+    // Step 2: Check for similar notes
+    const similarNotes = await findSimilar(content, 5)
+    if (similarNotes.length > 0) {
+      setMergeModal({
+        isOpen: true,
+        mode: similarNotes.length === 1 ? 'single' : 'multiple',
+        incomingContent: input.content,
+        matchedNotes: similarNotes
+      })
+      return true // Modal shown
+    }
+
+    return false // No match, proceed with normal save
+  }
+
   // Handle scroll for sticky header
   useEffect(() => {
     const handleScroll = () => {
@@ -336,6 +373,7 @@ function App() {
               onCancelEdit={handleCancelEdit}
               sharedContent={sharedContent}
               onSharedContentConsumed={handleSharedContentConsumed}
+              onCheckMergeIntent={handleCheckMergeIntent}
             />
           </section>
         )}
