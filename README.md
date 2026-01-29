@@ -55,6 +55,23 @@ The Tech:     Your database wrapped in a lightweight export. No server.
 
 ---
 
+### 🔀 Safe Merge (Smart Import)
+
+Import notes from backups without losing existing data.
+
+```
+The Feature:  Click "Merge Backup" and select a JSON file
+The Magic:    Duplicates are detected (by content + timestamp)
+              New notes are added, existing notes are preserved
+The Safety:   "Danger Zone" toggle for full replace if needed
+```
+
+Works with:
+- **PWA backups** — Export from one browser, import to another
+- **Chrome Extension exports** — Capture on desktop, merge to phone
+
+---
+
 ### 💡 See Also (Auto-Association)
 
 Your brain connects ideas. **Maribeda does too.**
@@ -70,7 +87,7 @@ The Value:    Accidental connections — no manual tagging required
 
 ---
 
-### 🔀 Smart Merge (Duplicate Detection)
+### 🔁 Smart Merge (Duplicate Detection)
 
 Never save the same link twice. Maribeda catches duplicates and suggests merging.
 
@@ -108,25 +125,70 @@ Start typing and results appear **instantly** — no need to finish the word.
 | **URL Detection** | Links become clickable automatically |
 | **PWA Ready** | Install as an app, works offline |
 | **Web Share Target** | Share from any app directly to Maribeda (Android) |
+| **Chrome Extension** | One-click capture from any webpage |
+
+---
+
+## 📱 PWA Optimizations
+
+Maribeda is built as a **Progressive Web App** with full offline support.
+
+| Feature | Status |
+|---------|--------|
+| **Service Worker** | ✅ Offline-first caching with Workbox |
+| **iOS Support** | ✅ Full-screen PWA experience |
+| **Maskable Icon** | ✅ Proper icon rendering on Android 8+ |
+| **WASM Preload** | ✅ Faster sql.js initialization |
+| **Update Prompt** | ✅ "New version available!" notification |
+
+### Install as App
+- **iOS**: Safari → Share → Add to Home Screen
+- **Android**: Chrome → Menu → Install App
+- **Desktop**: Chrome → Install icon in address bar
+
+---
+
+## 🧩 Chrome Extension
+
+Capture links from any webpage with one click.
+
+```
+maribeda-extension/
+├── manifest.json      # V3 manifest
+├── popup/             # Save form UI
+└── utils/             # Chrome storage wrapper
+```
+
+### Features
+- Auto-fill URL + title from active tab
+- Editable URL field (for chrome:// pages)
+- `Cmd+Enter` to save, `Esc` to close
+- Badge shows save count
+- Export to JSON for PWA import
+
+### Install
+1. Open `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked** → select `maribeda-extension/`
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐  ┌──────────────────┐
-│   SQLite WASM   │  │   FlexSearch     │
-│   (Storage)     │  │   (Search)       │
-│                 │  │                  │
-│ • Transactions  │  │ • Fuzzy Search   │
-│ • ACID          │  │ • Typo Tolerance │
-│ • Persistence   │  │ • Ranking        │
-└─────────────────┘  └──────────────────┘
-         ↓                    ↓
-    ┌────────────────────────────────┐
-    │      IndexedDB Cache           │
-    │   (Browser Persistence)        │
-    └────────────────────────────────┘
+┌─────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│   SQLite WASM   │  │   FlexSearch     │  │   Service Worker │
+│   (Storage)     │  │   (Search)       │  │   (Offline)      │
+│                 │  │                  │  │                  │
+│ • Transactions  │  │ • Fuzzy Search   │  │ • Cache Assets   │
+│ • ACID          │  │ • Typo Tolerance │  │ • Background Sync│
+│ • Persistence   │  │ • Ranking        │  │ • Update Prompt  │
+└─────────────────┘  └──────────────────┘  └──────────────────┘
+         ↓                    ↓                     ↓
+    ┌────────────────────────────────────────────────────┐
+    │              IndexedDB Cache                       │
+    │           (Browser Persistence)                    │
+    └────────────────────────────────────────────────────┘
 ```
 
 **Zero servers. Zero tracking. Zero compromises.**
@@ -140,8 +202,10 @@ Start typing and results appear **instantly** — no need to finish the word.
 | **Storage** | SQLite WASM (battle-tested, portable) |
 | **Search** | FlexSearch (fastest JS search, typo-tolerant) |
 | **Persistence** | IndexedDB (browser-native, async) |
-| **Frontend** | React + TypeScript |
-| **Build** | Vite |
+| **Frontend** | React 19 + TypeScript |
+| **Build** | Vite + vite-plugin-pwa |
+| **PWA** | Workbox (service worker caching) |
+| **Testing** | Vitest + Playwright |
 
 ---
 
@@ -161,13 +225,24 @@ npm install
 npm run dev
 ```
 
+### Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Build for production (generates SW) |
+| `npm run preview` | Preview production build |
+| `npm test` | Run unit tests |
+| `npm run test:e2e` | Run Playwright E2E tests |
+
 ---
 
 ## 📊 Performance
 
-- **Bundle**: ~110KB gzipped
+- **Bundle**: ~115KB gzipped
 - **Search**: <10ms for 1000 notes
-- **Offline**: ✅ Full functionality
+- **Offline**: ✅ Full functionality after first visit
+- **First Load**: <2s (WASM preloaded)
 
 ---
 

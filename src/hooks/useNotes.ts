@@ -12,6 +12,8 @@ import {
     findNoteByUrl as dbFindNoteByUrl,
     clearAllNotes,
     importNotesFromJson,
+    mergeNotesFromJson,
+    MergeResult,
 } from '../db/database';
 import {
     initSearchIndex,
@@ -135,6 +137,25 @@ export function useNotes() {
         return count;
     }, [db]);
 
+    // Safe merge from backup (doesn't delete existing notes)
+    // Returns { added, skipped } statistics
+    const mergeFromBackup = useCallback(async (jsonString: string): Promise<MergeResult> => {
+        if (!db) return { added: 0, skipped: 0, newNotes: [] };
+
+        // Merge notes (database handles deduplication)
+        const result = mergeNotesFromJson(jsonString);
+
+        // Update React state
+        setNotes(getAllNotes());
+
+        // Add new notes to FlexSearch index
+        for (const note of result.newNotes) {
+            await addToSearchIndex(note);
+        }
+
+        return result;
+    }, [db]);
+
     // Rediscover feature: get a random old note
     const rediscoverNote = useCallback((minAgeDays: number = 7) => {
         if (!db) return null;
@@ -200,6 +221,7 @@ export function useNotes() {
         search,
         refreshNotes,
         restoreFromBackup,
+        mergeFromBackup,
         isReady: db !== null,
     };
 }

@@ -7,6 +7,7 @@ import { SearchBar } from './components/SearchBar'
 import { NoteList } from './components/NoteList'
 import { BackupRestore } from './components/BackupRestore'
 import { InstallPrompt } from './components/InstallPrompt'
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt'
 import { ThemeToggle } from './components/ThemeToggle'
 import { FloatingAddButton } from './components/FloatingAddButton'
 import { RediscoverButton } from './components/RediscoverButton'
@@ -16,7 +17,7 @@ import { Note, NoteInput } from './types'
 import './App.css'
 
 function App() {
-  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, getRelatedNotes, findByUrl, findSimilar, appendToNote, search, restoreFromBackup, isReady } = useNotes()
+  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, getRelatedNotes, findByUrl, findSimilar, appendToNote, search, restoreFromBackup, mergeFromBackup, isReady } = useNotes()
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
@@ -410,6 +411,7 @@ function App() {
           <BackupRestore
             notes={notes}
             onRestore={handleRestore}
+            onMerge={mergeFromBackup}
           />
         </section>
       </main>
@@ -418,6 +420,7 @@ function App() {
         <p>All data stored locally on your device • No cloud • No accounts</p>
       </footer>
       <InstallPrompt />
+      <PWAUpdatePrompt />
       <Analytics />
 
       {/* Smart Merge Intent Modal */}

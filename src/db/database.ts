@@ -386,6 +386,98 @@ export function importNotesFromJson(jsonString: string): number {
 }
 
 /**
+ * Merge result type for tracking import statistics
+ */
+export interface MergeResult {
+    added: number;
+    skipped: number;
+    newNotes: Note[];
+}
+
+/**
+ * Merge notes from JSON without losing existing data
+ * Uses content-based deduplication to prevent duplicates
+ * Optimized: Loads existing content hashes into memory first (batch check)
+ * 
+ * @param jsonString - JSON string containing notes array (PWA or Extension format)
+ * @returns MergeResult with count of added/skipped and newly added notes (for FlexSearch)
+ */
+export function mergeNotesFromJson(jsonString: string): MergeResult {
+    const database = getDatabase();
+
+    // Parse incoming data - support both PWA and Extension export formats
+    let incomingNotes: Array<{ title?: string | null; content: string; createdAt: string; updatedAt?: string }>;
+
+    try {
+        const parsed = JSON.parse(jsonString);
+        // Extension format: { notes: [...] } or PWA format: [...]
+        incomingNotes = Array.isArray(parsed) ? parsed : (parsed.notes || []);
+    } catch {
+        throw new Error('Invalid JSON format');
+    }
+
+    // Batch optimization: Load all existing content+createdAt pairs into a Set
+    // This avoids N individual SELECT queries
+    const existingResult = database.exec('SELECT content, createdAt FROM notes');
+    const existingHashes = new Set<string>();
+
+    if (existingResult.length > 0) {
+        for (const row of existingResult[0].values) {
+            const content = row[0] as string;
+            const createdAt = row[1] as string;
+            // Create a simple hash: content|createdAt
+            existingHashes.add(`${content}|${createdAt}`);
+        }
+    }
+
+    let added = 0;
+    let skipped = 0;
+    const newNotes: Note[] = [];
+    const now = new Date().toISOString();
+
+    for (const note of incomingNotes) {
+        const content = note.content || '';
+        const createdAt = note.createdAt || now;
+        const hash = `${content}|${createdAt}`;
+
+        // Check if this note already exists
+        if (existingHashes.has(hash)) {
+            skipped++;
+            continue;
+        }
+
+        // Insert new note
+        const updatedAt = note.updatedAt || createdAt;
+        database.run(
+            'INSERT INTO notes (title, content, isPinned, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
+            [note.title || null, content, 0, createdAt, updatedAt]
+        );
+
+        // Get the inserted note's ID
+        const result = database.exec('SELECT last_insert_rowid() as id');
+        const id = result[0].values[0][0] as number;
+
+        // Track the new note for FlexSearch indexing
+        newNotes.push({
+            id,
+            title: note.title || null,
+            content,
+            isPinned: false,
+            lastViewedAt: null,
+            createdAt,
+            updatedAt,
+        });
+
+        // Add to hash set to prevent duplicates within the same import
+        existingHashes.add(hash);
+        added++;
+    }
+
+    persistToIndexedDB();
+    return { added, skipped, newNotes };
+}
+
+/**
  * Clear all notes (for restore functionality)
  */
 export function clearAllNotes(): void {

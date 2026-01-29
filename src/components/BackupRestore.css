@@ -85,3 +85,47 @@
         justify-content: center;
     }
 }
+
+/* Danger Zone Toggle */
+.backup-restore-danger-zone {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--color-border);
+}
+
+.danger-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.danger-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--color-danger);
+}
+
+.danger-toggle-label {
+    user-select: none;
+}
+
+.danger-toggle input:checked+.danger-toggle-label {
+    color: var(--color-danger);
+    font-weight: 500;
+}
+
+/* Danger mode: style the restore button differently */
+.restore-btn[title*="DANGER"] {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.restore-btn[title*="DANGER"]:hover {
+    background: var(--color-danger);
+    color: white;
+}

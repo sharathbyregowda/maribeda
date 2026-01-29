@@ -1,18 +1,20 @@
 import React, { useRef, useState } from 'react';
 import { zipSync, unzipSync } from 'fflate';
 import { Note } from '../types';
-import { exportDatabase, restoreFromBinary } from '../db/database';
+import { exportDatabase, restoreFromBinary, MergeResult } from '../db/database';
 import './BackupRestore.css';
 
 interface BackupRestoreProps {
     notes: Note[];
     onRestore: (notes: Note[]) => void;
+    onMerge?: (jsonString: string) => Promise<MergeResult>;
     onBinaryRestore?: () => void;
 }
 
-export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupRestoreProps) {
+export function BackupRestore({ notes, onRestore, onMerge, onBinaryRestore }: BackupRestoreProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isSharing, setIsSharing] = useState(false);
+    const [isReplaceMode, setIsReplaceMode] = useState(false);
 
     const triggerDownload = (data: Uint8Array, filename: string, mimeType: string) => {
         const blob = new Blob([data.buffer as ArrayBuffer], { type: mimeType });
@@ -78,7 +80,7 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
 
         try {
             if (file.name.endsWith('.zip')) {
-                // ZIP file - extract and restore
+                // ZIP file - extract and restore (always full replace for binary)
                 const arrayBuffer = await file.arrayBuffer();
                 const unzipped = unzipSync(new Uint8Array(arrayBuffer));
 
@@ -91,42 +93,112 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
                     throw new Error('No SQLite database found in ZIP file');
                 }
 
-                await restoreFromBinary(unzipped[sqliteFile]);
-
                 const confirmRestore = window.confirm(
-                    'Database restored successfully! The page will reload to apply changes.'
+                    '⚠️ This will REPLACE all existing notes with the backup.\n\nThis is a full database restore. Continue?'
                 );
 
                 if (confirmRestore) {
+                    await restoreFromBinary(unzipped[sqliteFile]);
+                    alert('Database restored! The page will reload.');
                     window.location.reload();
                 }
             } else if (file.name.endsWith('.sqlite') || file.name.endsWith('.db')) {
-                // Direct SQLite binary restore (legacy support)
-                const arrayBuffer = await file.arrayBuffer();
-                await restoreFromBinary(new Uint8Array(arrayBuffer));
-
+                // Direct SQLite binary restore (always full replace)
                 const confirmRestore = window.confirm(
-                    'Database restored successfully! The page will reload to apply changes.'
+                    '⚠️ This will REPLACE all existing notes with the backup.\n\nThis is a full database restore. Continue?'
                 );
 
                 if (confirmRestore) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    await restoreFromBinary(new Uint8Array(arrayBuffer));
+                    alert('Database restored! The page will reload.');
                     window.location.reload();
                 }
             } else if (file.name.endsWith('.json')) {
-                // Legacy JSON restore
+                // JSON import - can merge or replace
                 const content = await file.text();
-                const importedNotes = JSON.parse(content) as Note[];
 
-                if (!Array.isArray(importedNotes)) {
+                // Try to parse and validate
+                // Use flexible type since extension format has fewer fields than PWA format
+                type PartialNote = { title?: string | null; content?: string; createdAt?: string };
+                let importedNotes: PartialNote[];
+                let isExtensionFormat = false;
+
+                try {
+                    const parsed = JSON.parse(content);
+                    if (Array.isArray(parsed)) {
+                        // PWA format: [...]
+                        importedNotes = parsed;
+                    } else if (parsed.notes && Array.isArray(parsed.notes)) {
+                        // Extension format: { notes: [...], source: 'maribeda-extension' }
+                        importedNotes = parsed.notes;
+                        isExtensionFormat = true;
+                    } else {
+                        throw new Error('Invalid JSON format');
+                    }
+
+                    // Validate at least one note with content exists
+                    if (importedNotes.length === 0) {
+                        throw new Error('No notes found in backup');
+                    }
+
+                    // Basic validation: each note should have content
+                    for (const note of importedNotes) {
+                        if (!note.content && typeof note.content !== 'string') {
+                            console.warn('Note missing content:', note);
+                        }
+                    }
+                } catch (err) {
+                    console.error('JSON parse error:', err);
                     throw new Error('Invalid backup file');
                 }
 
-                const confirmRestore = window.confirm(
-                    `This will replace all existing notes with ${importedNotes.length} notes from the backup. Continue?`
-                );
+                if (isReplaceMode) {
+                    // Danger Zone: Full replace
+                    // For replace mode, we need full Note objects, so convert partials
+                    const fullNotes: Note[] = importedNotes.map((n, i) => ({
+                        id: i + 1, // Temporary ID, will be reassigned
+                        title: n.title || null,
+                        content: n.content || '',
+                        isPinned: false,
+                        lastViewedAt: null,
+                        createdAt: n.createdAt || new Date().toISOString(),
+                        updatedAt: n.createdAt || new Date().toISOString(),
+                    }));
 
-                if (confirmRestore) {
-                    onRestore(importedNotes);
+                    const confirmRestore = window.confirm(
+                        `⚠️ DANGER ZONE: This will DELETE all ${notes.length} existing notes and replace with ${fullNotes.length} notes.\n\nAre you absolutely sure?`
+                    );
+
+                    if (confirmRestore) {
+                        onRestore(fullNotes);
+                        alert(`Replaced with ${fullNotes.length} notes.`);
+                    }
+                } else {
+                    // Safe merge mode (default)
+                    // Pass raw JSON string to onMerge - it handles format detection
+                    if (onMerge) {
+                        const result = await onMerge(content);
+                        alert(`✅ Merged successfully!\n\nAdded: ${result.added} new notes\nSkipped: ${result.skipped} duplicates\n\nYour existing notes are safe.`);
+                    } else {
+                        // Fallback if onMerge not provided
+                        const confirmRestore = window.confirm(
+                            `This will add ${importedNotes.length} notes to your collection. Continue?`
+                        );
+                        if (confirmRestore) {
+                            // Convert to full Notes for legacy restore
+                            const fullNotes: Note[] = importedNotes.map((n, i) => ({
+                                id: i + 1,
+                                title: n.title || null,
+                                content: n.content || '',
+                                isPinned: false,
+                                lastViewedAt: null,
+                                createdAt: n.createdAt || new Date().toISOString(),
+                                updatedAt: n.createdAt || new Date().toISOString(),
+                            }));
+                            onRestore(fullNotes);
+                        }
+                    }
                 }
             } else {
                 throw new Error('Unsupported file format. Please use .zip, .sqlite, .db, or .json files.');
@@ -193,6 +265,7 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
                 <button
                     className="restore-btn"
                     onClick={handleRestoreClick}
+                    title={isReplaceMode ? "DANGER: Will replace all notes" : "Safe: Merges new notes"}
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -209,7 +282,7 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                    Restore
+                    {isReplaceMode ? '⚠️ Replace All' : 'Merge Backup'}
                 </button>
 
                 <input
@@ -219,6 +292,20 @@ export function BackupRestore({ notes, onRestore, onBinaryRestore }: BackupResto
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
                 />
+            </div>
+
+            {/* Danger Zone Toggle */}
+            <div className="backup-restore-danger-zone">
+                <label className="danger-toggle">
+                    <input
+                        type="checkbox"
+                        checked={isReplaceMode}
+                        onChange={(e) => setIsReplaceMode(e.target.checked)}
+                    />
+                    <span className="danger-toggle-label">
+                        🔴 Danger Zone: Replace all notes (factory reset)
+                    </span>
+                </label>
             </div>
         </div>
     );

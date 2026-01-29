@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=350">
+  <title>Maribeda</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">🧠</span>
+        <span class="logo-text">Maribeda</span>
+      </div>
+      <span class="save-count" id="saveCount">0 saves</span>
+    </header>
+
+    <!-- Form -->
+    <form id="saveForm" class="form">
+      <div class="field">
+        <label for="urlInput">URL</label>
+        <input 
+          type="url" 
+          id="urlInput" 
+          class="input url-input" 
+          placeholder="https://..."
+          required
+        >
+      </div>
+
+      <div class="field">
+        <label for="titleInput">Title</label>
+        <input 
+          type="text" 
+          id="titleInput" 
+          class="input" 
+          placeholder="Page title"
+          required
+        >
+      </div>
+
+      <div class="field">
+        <label for="noteInput">Note <span class="optional">(optional)</span></label>
+        <textarea 
+          id="noteInput" 
+          class="input textarea" 
+          placeholder="Add a note..."
+          rows="2"
+        ></textarea>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" id="saveBtn">
+          💾 Save
+        </button>
+        <button type="button" class="btn btn-secondary" id="exportBtn">
+          ⬇️ Export
+        </button>
+      </div>
+    </form>
+
+    <!-- Keyboard hint -->
+    <div class="hint">
+      <kbd>⌘</kbd>+<kbd>Enter</kbd> to save • <kbd>Esc</kbd> to close
+    </div>
+  </div>
+
+  <script src="../utils/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
