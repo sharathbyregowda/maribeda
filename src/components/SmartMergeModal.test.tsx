@@ -242,10 +242,7 @@ describe('SmartMergeModal', () => {
             );
 
             // Click the overlay (not the modal content)
-            fireEvent.click(screen.getByTestId ?
-                document.querySelector('.smart-merge-overlay')! :
-                document.querySelector('.smart-merge-overlay')!
-            );
+            fireEvent.click(document.querySelector('.smart-merge-overlay')!);
 
             expect(onClose).toHaveBeenCalled();
         });
