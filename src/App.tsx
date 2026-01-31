@@ -130,7 +130,8 @@ function App() {
 
   const handleMergeCreateNew = (content: string) => {
     setMergeModal(null)
-    setSharedContent(content) // Pass to input form
+    // Directly save the note - bypass merge intent check since user explicitly chose to create new
+    addNote({ content })
   }
 
   const handleMergeOpenNote = (note: Note) => {
