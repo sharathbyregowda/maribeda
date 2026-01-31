@@ -395,21 +395,27 @@ function App() {
             rediscoveredNoteId={rediscoveredNoteId}
             getRelatedNotes={getRelatedNotes}
             onRelatedNoteClick={(note) => {
+              // Store the target note ID before clearing search
+              const targetNoteId = note.id;
+
               // Clear search first so the target note is visible in the list
-              if (query) {
+              if (query || debouncedQuery) {
                 setQuery('');
               }
 
-              // Wait for React to re-render with full list, then scroll
+              // Wait for React to re-render with full list (needs time for debounce to clear)
+              // 300ms = debounce delay (usually ~150ms) + render time
               setTimeout(() => {
-                const element = document.querySelector(`[data-note-id="${note.id}"]`);
+                const element = document.querySelector(`[data-note-id="${targetNoteId}"]`);
                 if (element) {
                   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   // Briefly highlight with rediscover effect
-                  setRediscoveredNoteId(note.id);
+                  setRediscoveredNoteId(targetNoteId);
                   setTimeout(() => setRediscoveredNoteId(null), 3000);
+                } else {
+                  console.warn('See Also: Could not find note element with id:', targetNoteId);
                 }
-              }, 100);
+              }, 300);
             }}
           />
         </section>
