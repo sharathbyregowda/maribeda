@@ -395,14 +395,21 @@ function App() {
             rediscoveredNoteId={rediscoveredNoteId}
             getRelatedNotes={getRelatedNotes}
             onRelatedNoteClick={(note) => {
-              // Scroll to the clicked related note
-              const element = document.querySelector(`[data-note-id="${note.id}"]`);
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Briefly highlight with rediscover effect
-                setRediscoveredNoteId(note.id);
-                setTimeout(() => setRediscoveredNoteId(null), 3000);
+              // Clear search first so the target note is visible in the list
+              if (query) {
+                setQuery('');
               }
+
+              // Wait for React to re-render with full list, then scroll
+              setTimeout(() => {
+                const element = document.querySelector(`[data-note-id="${note.id}"]`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  // Briefly highlight with rediscover effect
+                  setRediscoveredNoteId(note.id);
+                  setTimeout(() => setRediscoveredNoteId(null), 3000);
+                }
+              }, 100);
             }}
           />
         </section>
