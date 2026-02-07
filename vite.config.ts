@@ -12,6 +12,9 @@ export default defineConfig({
         'maribeda-favicon.jpeg',
         'logo.png',
         'logo-dark.png',
+        'icon-192.png',
+        'icon-512.png',
+        'apple-touch-icon.png',
         'sql-wasm.wasm' // Critical: Cache the WASM file for offline use
       ],
       manifest: {
@@ -24,18 +27,20 @@ export default defineConfig({
         background_color: '#f0f4f8',
         icons: [
           {
-            src: '/logo.png',
+            src: '/icon-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: '/logo.png',
+            src: '/icon-512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: '/logo.png',
-            sizes: '192x192',
+            src: '/icon-512.png',
+            sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
           }
