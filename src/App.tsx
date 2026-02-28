@@ -35,6 +35,7 @@ function App() {
     isOpen: boolean;
     mode: SmartMergeMode;
     incomingContent: string;
+    incomingTitle?: string;
     matchedNotes: Note[];
   } | null>(null)
 
@@ -129,9 +130,10 @@ function App() {
   }
 
   const handleMergeCreateNew = (content: string) => {
+    const title = mergeModal?.incomingTitle
     setMergeModal(null)
     // Directly save the note - bypass merge intent check since user explicitly chose to create new
-    addNote({ content })
+    addNote({ content, title })
   }
 
   const handleMergeOpenNote = (note: Note) => {
@@ -167,6 +169,7 @@ function App() {
           isOpen: true,
           mode: 'duplicate',
           incomingContent: input.content,
+          incomingTitle: input.title,
           matchedNotes: [existingNote]
         })
         return true // Modal shown
@@ -180,6 +183,7 @@ function App() {
         isOpen: true,
         mode: similarNotes.length === 1 ? 'single' : 'multiple',
         incomingContent: input.content,
+        incomingTitle: input.title,
         matchedNotes: similarNotes
       })
       return true // Modal shown

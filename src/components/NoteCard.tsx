@@ -4,7 +4,6 @@ import { linkifyText } from '../utils/urlDetector';
 import { formatRelativeTime, formatFullDate } from '../utils/dateFormatter';
 import { extractSnippet, highlightMatches, linkifyAndHighlight } from '../utils/snippetExtractor';
 import { SeeAlso } from './SeeAlso';
-import { LinkPreviewList } from './LinkPreviewCard';
 import './NoteCard.css';
 
 interface NoteCardProps {
@@ -57,6 +56,50 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isR
         return extractSnippet(note.content, searchQuery);
     }, [note.content, searchQuery]);
 
+    // Build a URL-to-preview lookup map
+    const previewByUrl = useMemo(() => {
+        const map = new Map<string, LinkPreview>();
+        if (linkPreviews) {
+            for (const p of linkPreviews) {
+                map.set(p.url, p);
+            }
+        }
+        return map;
+    }, [linkPreviews]);
+
+    // Check if a line is purely a URL (with optional whitespace)
+    const isUrlOnlyLine = (line: string): string | null => {
+        const trimmed = line.trim();
+        if (!trimmed) return null;
+        const URL_REGEX = /^(https?:\/\/[^\s]+|www\.[^\s]+)$/i;
+        return URL_REGEX.test(trimmed) ? trimmed : null;
+    };
+
+    // Render a single line — URL lines get a subtitle annotation, others render normally
+    const renderLine = (line: string, index: number) => {
+        const url = isUrlOnlyLine(line);
+        if (url && previewByUrl.has(url)) {
+            const preview = previewByUrl.get(url)!;
+            return (
+                <div key={index} className="note-url-enriched">
+                    <p>{linkifyText(line)}</p>
+                    {preview.title && (
+                        <span className="note-url-subtitle">
+                            {preview.title}
+                            {preview.siteName && <span className="note-url-site"> · {preview.siteName}</span>}
+                        </span>
+                    )}
+                </div>
+            );
+        }
+        // Normal text line with linkification
+        return (
+            <p key={index}>
+                {linkifyText(line)}
+            </p>
+        );
+    };
+
     // Render content: snippet with highlights when searching, full content otherwise
     const renderContent = () => {
         // When searching and we have matches
@@ -97,12 +140,8 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isR
             );
         }
 
-        // Default: show full content with linkify
-        return note.content.split('\n').map((line, index) => (
-            <p key={index}>
-                {linkifyText(line)}
-            </p>
-        ));
+        // Default: show full content, enriching URL-only lines with preview subtitles
+        return note.content.split('\n').map((line, index) => renderLine(line, index));
     };
 
     return (
@@ -142,9 +181,6 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isR
 
             <div className="note-card-content">
                 {renderContent()}
-                {linkPreviews && linkPreviews.length > 0 && (
-                    <LinkPreviewList previews={linkPreviews} />
-                )}
             </div>
 
             <div className="note-card-actions">
