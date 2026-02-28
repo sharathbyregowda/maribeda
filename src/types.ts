@@ -12,3 +12,13 @@ export interface NoteInput {
   title?: string;
   content: string;
 }
+
+export interface LinkPreview {
+  id: number;
+  noteId: number;
+  url: string;
+  title: string | null;
+  description: string | null;
+  siteName: string | null;
+  fetchedAt: string;
+}

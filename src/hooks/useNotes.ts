@@ -25,11 +25,18 @@ import {
     clearSearchIndex
 } from '../search/searchIndex';
 import { getRelatedNotes as findRelatedNotes, findSimilarNoteIds } from '../utils/seeAlso';
-import { Note, NoteInput } from '../types';
+import {
+    fetchAndSaveLinkPreviews,
+    loadLinkPreviewsForNotes,
+    removeLinkPreviewsForNote,
+    hasPreviewableUrls,
+} from '../utils/linkPreviewService';
+import { Note, NoteInput, LinkPreview } from '../types';
 
 export function useNotes() {
     const [db, setDb] = useState<Database | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
+    const [linkPreviews, setLinkPreviews] = useState<Map<number, LinkPreview[]>>(new Map());
     const [isLoading, setIsLoading] = useState(true);
     const [isSearchReady, setIsSearchReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -46,6 +53,13 @@ export function useNotes() {
 
                 const allNotes = getAllNotes();
                 setNotes(allNotes);
+
+                // Load link previews for all notes
+                const noteIds = allNotes.map(n => n.id);
+                if (noteIds.length > 0) {
+                    const previews = loadLinkPreviewsForNotes(noteIds);
+                    setLinkPreviews(previews);
+                }
 
                 // Build search index
                 await buildSearchIndex(allNotes);
@@ -70,6 +84,21 @@ export function useNotes() {
         // Add to search index
         addToSearchIndex(note);
 
+        // Fetch link previews in the background
+        if (hasPreviewableUrls(input.content)) {
+            fetchAndSaveLinkPreviews(note.id, input.content)
+                .then(previews => {
+                    if (previews.length > 0) {
+                        setLinkPreviews(prev => {
+                            const next = new Map(prev);
+                            next.set(note.id, previews);
+                            return next;
+                        });
+                    }
+                })
+                .catch(console.error);
+        }
+
         return note;
     }, [db]);
 
@@ -81,6 +110,31 @@ export function useNotes() {
         // Update search index
         if (note) {
             updateInSearchIndex(note);
+
+            // Re-fetch link previews for updated content
+            if (hasPreviewableUrls(input.content)) {
+                fetchAndSaveLinkPreviews(note.id, input.content)
+                    .then(previews => {
+                        setLinkPreviews(prev => {
+                            const next = new Map(prev);
+                            if (previews.length > 0) {
+                                next.set(note.id, previews);
+                            } else {
+                                next.delete(note.id);
+                            }
+                            return next;
+                        });
+                    })
+                    .catch(console.error);
+            } else {
+                // Content no longer has URLs, remove existing previews
+                removeLinkPreviewsForNote(id);
+                setLinkPreviews(prev => {
+                    const next = new Map(prev);
+                    next.delete(id);
+                    return next;
+                });
+            }
         }
 
         return note;
@@ -93,6 +147,13 @@ export function useNotes() {
 
         // Remove from search index
         removeFromSearchIndex(id);
+
+        // Clean up link previews
+        setLinkPreviews(prev => {
+            const next = new Map(prev);
+            next.delete(id);
+            return next;
+        });
 
         return result;
     }, [db]);
@@ -205,6 +266,7 @@ export function useNotes() {
 
     return {
         notes,
+        linkPreviews,
         isLoading,
         isSearchReady,
         error,

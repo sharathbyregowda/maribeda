@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Note } from '../types';
+import { Note, LinkPreview } from '../types';
 import { linkifyText } from '../utils/urlDetector';
 import { formatRelativeTime, formatFullDate } from '../utils/dateFormatter';
 import { extractSnippet, highlightMatches, linkifyAndHighlight } from '../utils/snippetExtractor';
 import { SeeAlso } from './SeeAlso';
+import { LinkPreviewList } from './LinkPreviewCard';
 import './NoteCard.css';
 
 interface NoteCardProps {
@@ -15,9 +16,10 @@ interface NoteCardProps {
     isRediscovered?: boolean;
     getRelatedNotes?: (note: Note) => Promise<Note[]>;
     onRelatedNoteClick?: (note: Note) => void;
+    linkPreviews?: LinkPreview[];
 }
 
-export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isRediscovered, getRelatedNotes, onRelatedNoteClick }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isRediscovered, getRelatedNotes, onRelatedNoteClick, linkPreviews }: NoteCardProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [relatedNotes, setRelatedNotes] = useState<Note[]>([]);
@@ -140,6 +142,9 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isR
 
             <div className="note-card-content">
                 {renderContent()}
+                {linkPreviews && linkPreviews.length > 0 && (
+                    <LinkPreviewList previews={linkPreviews} />
+                )}
             </div>
 
             <div className="note-card-actions">

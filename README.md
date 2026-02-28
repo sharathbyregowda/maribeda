@@ -101,6 +101,30 @@ Also works for **similar content** — if you share something titled "Kettlebell
 
 ---
 
+### 🔗 Rich Link Previews
+
+Your saved URLs explain themselves.
+
+```
+You save:     4 Instagram Reel links about dance
+Before:       4 opaque URLs that mean nothing 6 months later
+Now:          📷 instagram.com · 4 links
+              ├─ "3 Easy Leo Moves for Beginners" — @dancewithleo
+              ├─ "Advanced Leo Transitions" — @dancewithleo
+              ├─ "Leo Moves You're Doing Wrong" — @dancefix
+              └─ "Full Leo Routine w/ Music" — @dancewithleo
+```
+
+When you save a note with URLs, Maribeda fetches the page title and description using Open Graph metadata — the same data social media uses for link previews. Previews are stored locally and work offline after first fetch.
+
+**How it works:**
+- URLs are detected automatically on save
+- Metadata is fetched via a lightweight edge function
+- Previews are grouped by domain (📷 Instagram, ▶️ YouTube, 💻 GitHub, etc.)
+- If a fetch fails, the note saves normally — zero degradation
+
+---
+
 ### 🔍 Smart Search
 
 FlexSearch finds what you're looking for — even when you're mid-thought.
@@ -123,6 +147,7 @@ Start typing and results appear **instantly** — no need to finish the word.
 | **Pin to Top** | Keep important notes always visible |
 | **Dark Mode** | Easy on the eyes, day or night |
 | **URL Detection** | Links become clickable automatically |
+| **Link Previews** | URLs enriched with page titles via Open Graph metadata |
 | **PWA Ready** | Install as an app, works offline |
 | **Web Share Target** | Share from any app directly to Maribeda (Android) |
 | **Chrome Extension** | One-click capture from any webpage |

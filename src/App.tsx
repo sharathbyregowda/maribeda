@@ -17,7 +17,7 @@ import { Note, NoteInput } from './types'
 import './App.css'
 
 function App() {
-  const { notes, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, getRelatedNotes, findByUrl, findSimilar, appendToNote, search, restoreFromBackup, mergeFromBackup, isReady } = useNotes()
+  const { notes, linkPreviews, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, getRelatedNotes, findByUrl, findSimilar, appendToNote, search, restoreFromBackup, mergeFromBackup, isReady } = useNotes()
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
@@ -395,6 +395,7 @@ function App() {
             searchQuery={debouncedQuery}
             rediscoveredNoteId={rediscoveredNoteId}
             getRelatedNotes={getRelatedNotes}
+            linkPreviews={linkPreviews}
             onRelatedNoteClick={(note) => {
               // Store the target note ID before clearing search
               const targetNoteId = note.id;

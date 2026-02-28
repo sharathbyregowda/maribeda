@@ -1,5 +1,5 @@
 import initSqlJs, { Database } from 'sql.js';
-import { Note, NoteInput } from '../types';
+import { Note, NoteInput, LinkPreview } from '../types';
 
 let db: Database | null = null;
 
@@ -64,10 +64,25 @@ function createSchema(database: Database): void {
         // Column already exists, ignore
     }
 
+    // Link previews table for Rich Link Previews feature
+    database.run(`
+    CREATE TABLE IF NOT EXISTS link_previews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      noteId INTEGER NOT NULL,
+      url TEXT NOT NULL,
+      title TEXT,
+      description TEXT,
+      siteName TEXT,
+      fetchedAt TEXT NOT NULL,
+      FOREIGN KEY (noteId) REFERENCES notes(id) ON DELETE CASCADE
+    )
+    `);
+
     // Create indexes for faster standard access
     database.run(`CREATE INDEX IF NOT EXISTS idx_notes_createdAt ON notes(createdAt DESC)`);
     database.run(`CREATE INDEX IF NOT EXISTS idx_notes_isPinned ON notes(isPinned DESC)`);
     database.run(`CREATE INDEX IF NOT EXISTS idx_notes_lastViewedAt ON notes(lastViewedAt ASC)`);
+    database.run(`CREATE INDEX IF NOT EXISTS idx_link_previews_noteId ON link_previews(noteId)`);
 }
 
 /**
@@ -353,6 +368,90 @@ export function markNoteAsViewed(id: number): void {
     const database = getDatabase();
     const now = new Date().toISOString();
     database.run('UPDATE notes SET lastViewedAt = ? WHERE id = ?', [now, id]);
+    persistToIndexedDB();
+}
+
+/**
+ * Save link previews for a note
+ * Replaces any existing previews for the note
+ */
+export function saveLinkPreviews(noteId: number, previews: Array<{ url: string; title: string | null; description: string | null; siteName: string | null }>): LinkPreview[] {
+    const database = getDatabase();
+    const now = new Date().toISOString();
+
+    // Delete existing previews for this note
+    database.run('DELETE FROM link_previews WHERE noteId = ?', [noteId]);
+
+    const saved: LinkPreview[] = [];
+
+    for (const preview of previews) {
+        database.run(
+            'INSERT INTO link_previews (noteId, url, title, description, siteName, fetchedAt) VALUES (?, ?, ?, ?, ?, ?)',
+            [noteId, preview.url, preview.title, preview.description, preview.siteName, now]
+        );
+
+        const result = database.exec('SELECT last_insert_rowid() as id');
+        const id = result[0].values[0][0] as number;
+
+        saved.push({
+            id,
+            noteId,
+            url: preview.url,
+            title: preview.title,
+            description: preview.description,
+            siteName: preview.siteName,
+            fetchedAt: now,
+        });
+    }
+
+    persistToIndexedDB();
+    return saved;
+}
+
+/**
+ * Get link previews for multiple notes (batch query)
+ * Returns a map of noteId -> LinkPreview[]
+ */
+export function getLinkPreviewsForNotes(noteIds: number[]): Map<number, LinkPreview[]> {
+    const database = getDatabase();
+    const result = new Map<number, LinkPreview[]>();
+
+    if (noteIds.length === 0) return result;
+
+    // Use a single query with IN clause for batch efficiency
+    const placeholders = noteIds.map(() => '?').join(',');
+    const queryResult = database.exec(
+        `SELECT id, noteId, url, title, description, siteName, fetchedAt FROM link_previews WHERE noteId IN (${placeholders}) ORDER BY id`,
+        noteIds
+    );
+
+    if (queryResult.length === 0) return result;
+
+    for (const row of queryResult[0].values) {
+        const preview: LinkPreview = {
+            id: row[0] as number,
+            noteId: row[1] as number,
+            url: row[2] as string,
+            title: row[3] as string | null,
+            description: row[4] as string | null,
+            siteName: row[5] as string | null,
+            fetchedAt: row[6] as string,
+        };
+
+        const existing = result.get(preview.noteId) || [];
+        existing.push(preview);
+        result.set(preview.noteId, existing);
+    }
+
+    return result;
+}
+
+/**
+ * Delete link previews for a specific note
+ */
+export function deleteLinkPreviewsForNote(noteId: number): void {
+    const database = getDatabase();
+    database.run('DELETE FROM link_previews WHERE noteId = ?', [noteId]);
     persistToIndexedDB();
 }
 

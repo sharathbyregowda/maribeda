@@ -1,5 +1,5 @@
 import React from 'react';
-import { Note } from '../types';
+import { Note, LinkPreview } from '../types';
 import { NoteCard } from './NoteCard';
 import './NoteList.css';
 
@@ -13,9 +13,10 @@ interface NoteListProps {
     rediscoveredNoteId?: number | null;
     getRelatedNotes?: (note: Note) => Promise<Note[]>;
     onRelatedNoteClick?: (note: Note) => void;
+    linkPreviews?: Map<number, LinkPreview[]>;
 }
 
-export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, searchQuery, rediscoveredNoteId, getRelatedNotes, onRelatedNoteClick }: NoteListProps) {
+export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, searchQuery, rediscoveredNoteId, getRelatedNotes, onRelatedNoteClick, linkPreviews }: NoteListProps) {
     if (notes.length === 0) {
         return (
             <div className="note-list-empty">
@@ -78,6 +79,7 @@ export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, se
                         isRediscovered={rediscoveredNoteId === note.id}
                         getRelatedNotes={getRelatedNotes}
                         onRelatedNoteClick={onRelatedNoteClick}
+                        linkPreviews={linkPreviews?.get(note.id)}
                     />
                 </div>
             ))}
