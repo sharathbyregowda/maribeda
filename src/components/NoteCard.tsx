@@ -3,6 +3,7 @@ import { Note, LinkPreview } from '../types';
 import { linkifyText } from '../utils/urlDetector';
 import { formatRelativeTime, formatFullDate } from '../utils/dateFormatter';
 import { extractSnippet, highlightMatches, linkifyAndHighlight } from '../utils/snippetExtractor';
+import { getNoteAge, getAgingLabel } from '../utils/noteAging';
 import { SeeAlso } from './SeeAlso';
 import './NoteCard.css';
 
@@ -11,6 +12,7 @@ interface NoteCardProps {
     onEdit: (note: Note) => void;
     onDelete: (id: number) => void;
     onTogglePin: (id: number) => void;
+    onMarkAsViewed?: (id: number) => void;
     searchQuery?: string;
     isRediscovered?: boolean;
     getRelatedNotes?: (note: Note) => Promise<Note[]>;
@@ -18,7 +20,7 @@ interface NoteCardProps {
     linkPreviews?: LinkPreview[];
 }
 
-export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isRediscovered, getRelatedNotes, onRelatedNoteClick, linkPreviews }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onDelete, onTogglePin, onMarkAsViewed, searchQuery, isRediscovered, getRelatedNotes, onRelatedNoteClick, linkPreviews }: NoteCardProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [relatedNotes, setRelatedNotes] = useState<Note[]>([]);
@@ -144,8 +146,11 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isR
         return note.content.split('\n').map((line, index) => renderLine(line, index));
     };
 
+    const noteAge = getNoteAge(note);
+    const agingLabel = getAgingLabel(note);
+
     return (
-        <div className={`note-card ${note.isPinned ? 'is-pinned' : ''} ${isRediscovered ? 'rediscovered' : ''}`}>
+        <div className={`note-card ${note.isPinned ? 'is-pinned' : ''} ${isRediscovered ? 'rediscovered' : ''} ${noteAge !== 'fresh' ? `note-age-${noteAge}` : ''}`}>
             <div className="note-card-header">
                 <div className="note-card-title-row">
                     {note.title && <h3 className="note-card-title">{highlightMatches(note.title, searchQuery || '')}</h3>}
@@ -177,6 +182,20 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, searchQuery, isR
                 >
                     {formatRelativeTime(note.createdAt)}
                 </time>
+                {agingLabel && (
+                    <div className="note-aging-indicator">
+                        <span className="note-aging-label">{agingLabel}</span>
+                        {onMarkAsViewed && (
+                            <button
+                                className="note-aging-action"
+                                onClick={(e) => { e.stopPropagation(); onMarkAsViewed(note.id); }}
+                                title="Mark as still useful"
+                            >
+                                ✓ Still useful
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="note-card-content">

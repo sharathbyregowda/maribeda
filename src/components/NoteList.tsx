@@ -8,6 +8,7 @@ interface NoteListProps {
     onEdit: (note: Note) => void;
     onDelete: (id: number) => void;
     onTogglePin: (id: number) => void;
+    onMarkAsViewed?: (id: number) => void;
     isSearching?: boolean;
     searchQuery?: string;
     rediscoveredNoteId?: number | null;
@@ -16,7 +17,7 @@ interface NoteListProps {
     linkPreviews?: Map<number, LinkPreview[]>;
 }
 
-export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, searchQuery, rediscoveredNoteId, getRelatedNotes, onRelatedNoteClick, linkPreviews }: NoteListProps) {
+export function NoteList({ notes, onEdit, onDelete, onTogglePin, onMarkAsViewed, isSearching, searchQuery, rediscoveredNoteId, getRelatedNotes, onRelatedNoteClick, linkPreviews }: NoteListProps) {
     if (notes.length === 0) {
         return (
             <div className="note-list-empty">
@@ -75,6 +76,7 @@ export function NoteList({ notes, onEdit, onDelete, onTogglePin, isSearching, se
                         onEdit={onEdit}
                         onDelete={onDelete}
                         onTogglePin={onTogglePin}
+                        onMarkAsViewed={onMarkAsViewed}
                         searchQuery={searchQuery}
                         isRediscovered={rediscoveredNoteId === note.id}
                         getRelatedNotes={getRelatedNotes}

@@ -395,6 +395,7 @@ function App() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onTogglePin={togglePin}
+            onMarkAsViewed={markAsViewed}
             isSearching={isSearching}
             searchQuery={debouncedQuery}
             rediscoveredNoteId={rediscoveredNoteId}
