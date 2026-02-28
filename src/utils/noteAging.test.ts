@@ -156,34 +156,33 @@ describe('getAgingLabel', () => {
         expect(getAgingLabel(makeNote({ createdAt: daysAgo(3) }), NOW)).toBeNull();
     });
 
-    it('returns label with weeks for settling notes', () => {
+    it('returns label for settling notes', () => {
         const note = makeNote({
             createdAt: daysAgo(14),
             updatedAt: daysAgo(14),
         });
         const label = getAgingLabel(note, NOW);
         expect(label).toContain('💤');
-        expect(label).toContain('2 weeks');
         expect(label).toContain('never opened');
     });
 
-    it('returns label with "1 week" for 7-13 day old notes', () => {
+    it('returns label for 7-13 day old notes', () => {
         const note = makeNote({
             createdAt: daysAgo(10),
             updatedAt: daysAgo(10),
         });
         const label = getAgingLabel(note, NOW);
-        expect(label).toContain('1 week');
+        expect(label).toContain('never opened');
     });
 
-    it('returns label with months for dormant notes', () => {
+    it('returns label for dormant notes', () => {
         const note = makeNote({
             createdAt: daysAgo(65),
             updatedAt: daysAgo(65),
         });
         const label = getAgingLabel(note, NOW);
         expect(label).toContain('💤');
-        expect(label).toContain('2 months');
+        expect(label).toContain('never opened');
     });
 
     it('returns cobweb emoji for forgotten notes', () => {
@@ -193,7 +192,7 @@ describe('getAgingLabel', () => {
         });
         const label = getAgingLabel(note, NOW);
         expect(label).toContain('🕸️');
-        expect(label).toContain('6 months');
+        expect(label).toContain('never opened');
     });
 
     it('returns null for old note that was recently viewed', () => {

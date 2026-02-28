@@ -68,33 +68,22 @@ function getLastActivity(note: Note): string | null {
 }
 
 /**
- * Generate a human-readable aging label for a note
- * Returns null for fresh notes (no label needed)
+ * Generate a short aging context label for a note.
+ * Returns null for fresh notes (no label needed).
+ * 
+ * The label omits the time since the existing timestamp already shows it.
+ * It only adds the missing context: "never opened".
  */
 export function getAgingLabel(note: Note, now: Date = new Date()): string | null {
     const age = getNoteAge(note, now);
-    const daysSinceCreated = daysBetween(note.createdAt, now);
 
     switch (age) {
         case 'fresh':
             return null;
-
-        case 'settling': {
-            const weeks = Math.floor(daysSinceCreated / 7);
-            const timeLabel = weeks === 1 ? '1 week' : `${weeks} weeks`;
-            return `💤 Saved ${timeLabel} ago · never opened`;
-        }
-
-        case 'dormant': {
-            const months = Math.floor(daysSinceCreated / 30);
-            const timeLabel = months === 1 ? '1 month' : `${months} months`;
-            return `💤 Saved ${timeLabel} ago · never opened`;
-        }
-
-        case 'forgotten': {
-            const months = Math.floor(daysSinceCreated / 30);
-            const timeLabel = months === 1 ? '1 month' : `${months} months`;
-            return `🕸️ Saved ${timeLabel} ago · never opened`;
-        }
+        case 'settling':
+        case 'dormant':
+            return '💤 never opened';
+        case 'forgotten':
+            return '🕸️ never opened';
     }
 }

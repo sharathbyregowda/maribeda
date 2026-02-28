@@ -3,7 +3,7 @@ import { Note, LinkPreview } from '../types';
 import { linkifyText } from '../utils/urlDetector';
 import { formatRelativeTime, formatFullDate } from '../utils/dateFormatter';
 import { extractSnippet, highlightMatches, linkifyAndHighlight } from '../utils/snippetExtractor';
-import { getNoteAge, getAgingLabel } from '../utils/noteAging';
+import { getAgingLabel } from '../utils/noteAging';
 import { SeeAlso } from './SeeAlso';
 import './NoteCard.css';
 
@@ -146,11 +146,10 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onMarkAsViewed, 
         return note.content.split('\n').map((line, index) => renderLine(line, index));
     };
 
-    const noteAge = getNoteAge(note);
     const agingLabel = getAgingLabel(note);
 
     return (
-        <div className={`note-card ${note.isPinned ? 'is-pinned' : ''} ${isRediscovered ? 'rediscovered' : ''} ${noteAge !== 'fresh' ? `note-age-${noteAge}` : ''}`}>
+        <div className={`note-card ${note.isPinned ? 'is-pinned' : ''} ${isRediscovered ? 'rediscovered' : ''}`}>
             <div className="note-card-header">
                 <div className="note-card-title-row">
                     {note.title && <h3 className="note-card-title">{highlightMatches(note.title, searchQuery || '')}</h3>}
@@ -176,26 +175,28 @@ export function NoteCard({ note, onEdit, onDelete, onTogglePin, onMarkAsViewed, 
                         </svg>
                     </button>
                 </div>
-                <time
-                    className="note-card-time"
-                    title={formatFullDate(note.createdAt)}
-                >
-                    {formatRelativeTime(note.createdAt)}
-                </time>
-                {agingLabel && (
-                    <div className="note-aging-indicator">
-                        <span className="note-aging-label">{agingLabel}</span>
-                        {onMarkAsViewed && (
-                            <button
-                                className="note-aging-action"
-                                onClick={(e) => { e.stopPropagation(); onMarkAsViewed(note.id); }}
-                                title="Mark as still useful"
-                            >
-                                ✓ Still useful
-                            </button>
-                        )}
-                    </div>
-                )}
+                <div className="note-card-meta">
+                    <time
+                        className="note-card-time"
+                        title={formatFullDate(note.createdAt)}
+                    >
+                        {formatRelativeTime(note.createdAt)}
+                    </time>
+                    {agingLabel && (
+                        <>
+                            <span className="note-aging-label"> · {agingLabel}</span>
+                            {onMarkAsViewed && (
+                                <button
+                                    className="note-aging-action"
+                                    onClick={(e) => { e.stopPropagation(); onMarkAsViewed(note.id); }}
+                                    title="Mark as still useful"
+                                >
+                                    ✓ Still useful
+                                </button>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
 
             <div className="note-card-content">
