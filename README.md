@@ -35,8 +35,11 @@ Search is for when you know what you want. **Rediscover is for when you don't.**
 ```
 The Feature:  Tap the "🎲 Rediscover" button
 The Result:   We surface a random note from months ago that you completely forgot
+The Bonus:    Sometimes we'll find a group of related notes you forgot together
 The Value:    "Oh wow! I forgot I saved this."
 ```
+
+**Smart Clustering**: 30% of the time, Rediscover looks for patterns among your old notes — like 4 Instagram links saved around the same time, or 3 notes about the same topic. When it finds a cluster, you can review them all together.
 
 It turns your diary into a **discovery engine**.
 
@@ -148,6 +151,8 @@ Start typing and results appear **instantly** — no need to finish the word.
 | **Dark Mode** | Easy on the eyes, day or night |
 | **URL Detection** | Links become clickable automatically |
 | **Link Previews** | URLs enriched with page titles via Open Graph metadata |
+| **Note Aging** | Visual cues on notes you haven't opened since saving |
+| **Smart Clustering** | Rediscover groups of related forgotten notes together |
 | **PWA Ready** | Install as an app, works offline |
 | **Web Share Target** | Share from any app directly to Maribeda (Android) |
 | **Chrome Extension** | One-click capture from any webpage |
