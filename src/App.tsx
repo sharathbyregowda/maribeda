@@ -12,12 +12,14 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { FloatingAddButton } from './components/FloatingAddButton'
 import { RediscoverButton } from './components/RediscoverButton'
 import { SmartMergeModal, SmartMergeMode } from './components/SmartMergeModal'
+import { ClusterPrompt } from './components/ClusterPrompt'
+import { findClusters, NoteCluster } from './utils/noteCluster'
 import { extractUrls } from './utils/urlDetector'
 import { Note, NoteInput } from './types'
 import './App.css'
 
 function App() {
-  const { notes, linkPreviews, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, markAsViewed, getRelatedNotes, findByUrl, findSimilar, appendToNote, search, restoreFromBackup, mergeFromBackup, isReady } = useNotes()
+  const { notes, linkPreviews, isLoading, isSearchReady, error, addNote, updateNote, deleteNote, togglePin, rediscoverNote, fetchOldNotes, markAsViewed, getRelatedNotes, findByUrl, findSimilar, appendToNote, search, restoreFromBackup, mergeFromBackup, isReady } = useNotes()
   const { query, setQuery, debouncedQuery, isSearching } = useSearch()
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchResults, setSearchResults] = useState<Note[]>([])
@@ -38,6 +40,9 @@ function App() {
     incomingTitle?: string;
     matchedNotes: Note[];
   } | null>(null)
+
+  // Cluster prompt state for Better Rediscover
+  const [clusterPrompt, setClusterPrompt] = useState<NoteCluster | null>(null)
 
   // Handle Web Share Target - check for duplicates/similar before creating
   useEffect(() => {
@@ -294,11 +299,28 @@ function App() {
     // Clear any existing highlight first
     setRediscoveredNoteId(null)
 
-    // Get a random old note (older than 7 days)
+    // 30% chance: try cluster-based rediscover
+    const shouldTryCluster = Math.random() < 0.3
+
+    if (shouldTryCluster) {
+      const oldNotes = fetchOldNotes(30)
+      if (oldNotes.length >= 3) {
+        const cluster = findClusters(oldNotes)
+        if (cluster) {
+          setClusterPrompt(cluster)
+          return // Show the cluster prompt instead of single-note rediscover
+        }
+      }
+    }
+
+    // Default: single-note rediscover (existing behavior)
+    doSingleRediscover()
+  }
+
+  const doSingleRediscover = () => {
     const note = rediscoverNote(7)
 
     if (!note) {
-      // Try with a shorter time frame if no old notes
       const recentNote = rediscoverNote(1)
       if (!recentNote) {
         alert('No notes to rediscover yet. Add more notes and check back later!')
@@ -309,7 +331,6 @@ function App() {
       setRediscoveredNoteId(note.id)
     }
 
-    // Mark as viewed after 3 seconds (so it doesn't repeat immediately)
     const noteId = note?.id ?? rediscoverNote(1)?.id
     if (noteId) {
       setTimeout(() => {
@@ -317,13 +338,66 @@ function App() {
       }, 3000)
     }
 
-    // Scroll to the note after a short delay (let React re-render first)
     setTimeout(() => {
       const noteElement = document.querySelector(`[data-note-id="${rediscoveredNoteId ?? noteId}"]`)
       if (noteElement) {
         noteElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
     }, 100)
+  }
+
+  const handleClusterShowAll = () => {
+    if (!clusterPrompt) return
+
+    // Clear search so all notes are visible
+    if (query || debouncedQuery) {
+      setQuery('')
+    }
+
+    setClusterPrompt(null)
+
+    // Highlight the first note and scroll to it, mark all as viewed
+    const noteIds = clusterPrompt.notes.map(n => n.id)
+    if (noteIds.length > 0) {
+      setRediscoveredNoteId(noteIds[0])
+
+      setTimeout(() => {
+        // Highlight all cluster notes briefly
+        for (const id of noteIds) {
+          const el = document.querySelector(`[data-note-id="${id}"]`)
+          if (el) {
+            el.classList.add('rediscovered')
+          }
+        }
+
+        // Scroll to the first one
+        const firstEl = document.querySelector(`[data-note-id="${noteIds[0]}"]`)
+        if (firstEl) {
+          firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+
+        // Remove highlights after 5 seconds
+        setTimeout(() => {
+          setRediscoveredNoteId(null)
+          for (const id of noteIds) {
+            const el = document.querySelector(`[data-note-id="${id}"]`)
+            if (el) {
+              el.classList.remove('rediscovered')
+            }
+          }
+        }, 5000)
+      }, 300)
+
+      // Mark all cluster notes as viewed
+      for (const id of noteIds) {
+        setTimeout(() => markAsViewed(id), 3000)
+      }
+    }
+  }
+
+  const handleClusterJustOne = () => {
+    setClusterPrompt(null)
+    doSingleRediscover()
   }
 
   if (isLoading || !isSearchReady) {
@@ -453,6 +527,16 @@ function App() {
           onCreateNew={handleMergeCreateNew}
           onOpenNote={handleMergeOpenNote}
           onClose={handleMergeClose}
+        />
+      )}
+
+      {/* Cluster Prompt for Better Rediscover */}
+      {clusterPrompt && (
+        <ClusterPrompt
+          cluster={clusterPrompt}
+          onShowAll={handleClusterShowAll}
+          onJustOne={handleClusterJustOne}
+          onDismiss={() => setClusterPrompt(null)}
         />
       )}
     </div>

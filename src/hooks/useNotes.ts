@@ -8,6 +8,7 @@ import {
     deleteNote as dbDeleteNote,
     toggleNotePin as dbToggleNotePin,
     getRandomOldNote as dbGetRandomOldNote,
+    getOldNotes as dbGetOldNotes,
     markNoteAsViewed as dbMarkNoteAsViewed,
     findNoteByUrl as dbFindNoteByUrl,
     clearAllNotes,
@@ -223,6 +224,12 @@ export function useNotes() {
         return dbGetRandomOldNote(minAgeDays);
     }, [db]);
 
+    // Get all old notes for clustering analysis
+    const fetchOldNotes = useCallback((minAgeDays: number = 30) => {
+        if (!db) return [];
+        return dbGetOldNotes(minAgeDays);
+    }, [db]);
+
     // Mark a note as viewed (for Rediscover feature)
     const markAsViewed = useCallback((id: number) => {
         if (!db) return;
@@ -275,6 +282,7 @@ export function useNotes() {
         deleteNote: deleteNoteById,
         togglePin,
         rediscoverNote,
+        fetchOldNotes,
         markAsViewed,
         getRelatedNotes,
         findByUrl,

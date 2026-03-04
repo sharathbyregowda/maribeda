@@ -361,6 +361,36 @@ export function getRandomOldNote(minAgeDays: number = 7): Note | null {
 }
 
 /**
+ * Get all notes older than the specified number of days.
+ * Used for cluster analysis in Better Rediscover.
+ */
+export function getOldNotes(minAgeDays: number = 30): Note[] {
+    const database = getDatabase();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - minAgeDays);
+    const cutoffISO = cutoffDate.toISOString();
+
+    const result = database.exec(`
+        SELECT id, title, content, isPinned, lastViewedAt, createdAt, updatedAt
+        FROM notes
+        WHERE createdAt < ?
+        ORDER BY createdAt DESC
+    `, [cutoffISO]);
+
+    if (result.length === 0) return [];
+
+    return result[0].values.map(row => ({
+        id: row[0] as number,
+        title: row[1] as string | null,
+        content: row[2] as string,
+        isPinned: Boolean(row[3]),
+        lastViewedAt: row[4] as string | null,
+        createdAt: row[5] as string,
+        updatedAt: row[6] as string,
+    }));
+}
+
+/**
  * Mark a note as viewed (update lastViewedAt timestamp)
  * Used to prevent the same note from appearing repeatedly in Rediscover
  */
